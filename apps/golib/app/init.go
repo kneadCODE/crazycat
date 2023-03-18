@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"sync"
+	"time"
 )
 
 // Init initalizes the application by setting up the logger, tracer and error reporter.
@@ -13,15 +15,43 @@ func Init() (context.Context, func(), error) {
 		return nil, nil, err
 	}
 
+	// TODO: Add log line to inform that processing has started
+
 	logger, err := newZap(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	tp, err := newTracer(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	tracer := tp.Tracer("main") // TODO: Check if we need to add some options here.
+
 	ctx = setConfigInContext(ctx, cfg)
 	ctx = setZapInContext(ctx, logger)
+	ctx = setOTELTracerInContext(ctx, tracer)
 
 	return ctx, func() {
-		// TODO: Add cleanup/flush/sync logic here
+		cancelCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		var wg sync.WaitGroup
+		wg.Add(2)
+
+		go func() {
+			defer wg.Done()
+
+			_ = logger.Sync() // Intentionally ignoring err because we can't do anything about it
+		}()
+
+		go func() {
+			defer wg.Done()
+
+			_ = tp.Shutdown(cancelCtx) // Intentionally ignoring err because we can't do anything about it
+		}()
+
+		wg.Wait()
 	}, nil
 }
