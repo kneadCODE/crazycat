@@ -1,0 +1,20 @@
+name: "CI"
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+env:
+  CONTAINER_REGISTRY: ghcr.io
+  CONTAINER_REGISTRY_PATH : ${{ github.repository }}
+jobs:
+  golib:
+    name: golib
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Run Tests
+      run: make test-golib
