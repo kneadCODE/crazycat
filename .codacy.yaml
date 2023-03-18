@@ -1,0 +1,23 @@
+---
+engines:
+  csslint:
+  duplication: # General
+  hadolint: # Docerfile
+  eslint:
+  gosec:
+  jacksonlinter: # JSON
+  jshint:
+  revive: # Go
+  shellcheck:
+  SQLint:
+  stylelint: # SCSS
+  tslint:
+languages:
+  css:
+    extensions:
+      - ".scss"
+exclude_paths:
+  - 'docker-compose*'
+  - 'apps/**/vendor/**'
+  - 'apps/**/*_gen.go'
+  - 'apps/**/mock_*.go'
