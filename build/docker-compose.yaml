@@ -1,0 +1,17 @@
+version: '3.8'
+networks:
+  base:
+    name: crazycat
+services:
+  golib-go:
+    container_name: crazycat-golib-go
+    image: golang:1.20
+    networks:
+      - base
+    volumes:
+      - ../apps/golib:/src:cached
+    working_dir: /src
+    environment:
+      CGO_ENABLED: 0
+      GOARCH: amd64
+      GOOS: linux
