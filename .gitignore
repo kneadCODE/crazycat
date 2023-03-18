@@ -1,3 +1,8 @@
+# misc
+.DS_Store
+
+######## Go Section ########
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -13,3 +18,74 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+
+
+######## TF Section ########
+# Local .terraform directories
+**/.terraform/*
+
+# terraform lock
+*.terraform.lock.hcl
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+
+# Ignore any .tfvars files that are generated automatically for each Terraform run. Most
+# .tfvars files are managed as part of configuration and so should be included in
+# version control.
+#
+# example.tfvars
+
+# Ignore override files as they are usually used to override resources locally and so
+# are not checked in
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Include override files you do wish to add to version control using negated pattern
+#
+# !example_override.tf
+
+# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
+# example: *tfplan*
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+
+
+######## JS Section ########
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+node_modules
+/.pnp
+.pnp.js
+
+# testing
+apps/frontend/**/coverage
+
+# next.js
+apps/frontend/**/.next/
+apps/frontend/**/out/
+
+# production
+apps/frontend/**/build
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+apps/frontend/**/.env.local
+apps/frontend/**/.env.development.local
+apps/frontend/**/.env.test.local
+apps/frontend/**/.env.production.local
