@@ -13,8 +13,8 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// LogDebug logs the given message at debug level
-func LogDebug(ctx context.Context, msg string, fields ...interface{}) {
+// TrackDebugEvent logs the given message at debug level
+func TrackDebugEvent(ctx context.Context, msg string, fields ...interface{}) {
 	l := zapFromContext(ctx)
 	if l == nil {
 		return

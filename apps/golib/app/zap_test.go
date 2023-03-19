@@ -50,7 +50,7 @@ func Test_newZap(t *testing.T) {
 // 	tracer := otelTracerFromContext(ctx)
 // 	ctx, _ = tracer.Start(ctx, "some_span")
 //
-// 	LogDebug(ctx, "hello world")
+// 	TrackDebugEvent(ctx, "hello world")
 // 	TrackInfoEvent(ctx, "hello world")
 // 	TrackWarnEvent(ctx, "hello world")
 // 	TrackErrorEvent(ctx, errors.New("some err"))
