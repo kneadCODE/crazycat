@@ -12,6 +12,12 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )
 
+const (
+	logFieldTraceID    = "trace_id"
+	logFieldSpanID     = "span_id"
+	logFieldTraceFlags = "trace_flags"
+)
+
 func newTracer(cfg Config) (*sdktrace.TracerProvider, error) {
 	res, err := getOTELResource(cfg)
 	if err != nil {

@@ -32,9 +32,9 @@ func TestSomething(t *testing.T) {
 	ctx, _ = tracer.Start(ctx, "some_span")
 
 	LogDebug(ctx, "hello world")
-	LogInfo(ctx, "hello world")
-	LogWarn(ctx, "hello world")
-	LogError(ctx, errors.New("some err"))
+	TrackInfoEvent(ctx, "hello world")
+	TrackWarnEvent(ctx, "hello world")
+	TrackErrorEvent(ctx, errors.New("some err"))
 
 	t.Fail()
 }
