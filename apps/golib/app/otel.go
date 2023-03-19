@@ -20,7 +20,7 @@ const (
 )
 
 func newOTELProvider(cfg Config, isSentryEnabled bool) (*sdktrace.TracerProvider, error) {
-	res, err := getOTELResource(cfg)
+	res, err := newOTELResource(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,8 @@ func newOTELProvider(cfg Config, isSentryEnabled bool) (*sdktrace.TracerProvider
 	return tp, nil
 }
 
-func getOTELResource(cfg Config) (*resource.Resource, error) {
+// TODO: Add comprehensive tests for the resource creation
+func newOTELResource(cfg Config) (*resource.Resource, error) {
 	attrs := []attribute.KeyValue{
 		semconv.ServiceName(cfg.Name),
 		semconv.ServiceNamespace(cfg.Project),
