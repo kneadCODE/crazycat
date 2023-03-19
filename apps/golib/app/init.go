@@ -1,3 +1,5 @@
+// Package app handles the application configuration and is responsible for orchestrating the
+// application along with handling all the Metrics, Events, Logs & Traces (MELT/Observability).
 package app
 
 import (
