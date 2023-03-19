@@ -1,6 +1,8 @@
 package app
 
 import (
+	"errors"
+	"fmt"
 	"os"
 
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
@@ -15,6 +17,9 @@ type Config struct {
 	ServerInstanceID string
 }
 
+// ErrInvalidConfig represents an invalid config error
+var ErrInvalidConfig = errors.New("invalid config")
+
 func newConfig() (Config, error) {
 	cfg := Config{
 		Name:             os.Getenv(string(semconv.ServiceNameKey)),
@@ -24,7 +29,25 @@ func newConfig() (Config, error) {
 		ServerInstanceID: os.Getenv(string(semconv.ServiceInstanceIDKey)),
 	}
 
-	// TODO: Add validation
+	if cfg.Name == "" {
+		return Config{}, fmt.Errorf("name is empty: %w", ErrInvalidConfig)
+	}
+
+	if cfg.Project == "" {
+		return Config{}, fmt.Errorf("project is empty: %w", ErrInvalidConfig)
+	}
+
+	if cfg.Env != EnvDev && cfg.Env != EnvStaging && cfg.Env != EnvProd {
+		return Config{}, fmt.Errorf("invalid env: %w", ErrInvalidConfig)
+	}
+
+	if cfg.Version == "" {
+		return Config{}, fmt.Errorf("version is empty: %w", ErrInvalidConfig)
+	}
+
+	if cfg.ServerInstanceID == "" {
+		return Config{}, fmt.Errorf("server instance ID is empty: %w", ErrInvalidConfig)
+	}
 
 	return cfg, nil
 }
