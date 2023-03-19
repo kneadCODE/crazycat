@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strconv"
 
+	sentryotel "github.com/getsentry/sentry-go/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -27,8 +28,11 @@ func newTracer(cfg Config) (*sdktrace.TracerProvider, error) {
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithResource(res),
 
+		sdktrace.WithSpanProcessor(sentryotel.NewSentrySpanProcessor()),
 		// TODO: Check what other options need to be set
 	)
+
+	// otel.SetTextMapPropagator(sentryotel.NewSentryPropagator()) // TODO: Look into writing custom propagator that can combine all propagators
 
 	return tp, nil
 }

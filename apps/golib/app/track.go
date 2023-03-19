@@ -4,6 +4,7 @@ import (
 	"context"
 	"runtime"
 
+	"github.com/getsentry/sentry-go"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.opentelemetry.io/otel/trace"
@@ -65,7 +66,15 @@ func TrackErrorEvent(ctx context.Context, err error, fields ...interface{}) {
 	}
 	span.RecordError(err, trace.WithAttributes(attrs...))
 
-	// TODO: Add error tracking stuff
+	if sentryHub := sentry.GetHubFromContext(ctx); sentryHub != nil {
+		client, scope := sentryHub.Client(), sentryHub.Scope()
+		// scope.SetTags(fields) // TODO: Figure out how to handle tags in a performant way
+		_ = client.CaptureException(
+			err,
+			&sentry.EventHint{Context: ctx},
+			scope,
+		)
+	}
 
 	l := zapFromContext(ctx)
 	if l == nil {

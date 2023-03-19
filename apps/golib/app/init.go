@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"github.com/getsentry/sentry-go"
 )
 
 // Init initalizes the application by setting up the logger, tracer and error reporter.
@@ -14,6 +16,7 @@ func Init() (context.Context, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	ctx = setConfigInContext(ctx, cfg)
 
 	// TODO: Add log line to inform that processing has started
 
@@ -21,17 +24,22 @@ func Init() (context.Context, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	ctx = setZapInContext(ctx, logger)
 
 	tp, err := newTracer(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	tracer := tp.Tracer("main") // TODO: Check if we need to add some options here.
-
-	ctx = setConfigInContext(ctx, cfg)
-	ctx = setZapInContext(ctx, logger)
 	ctx = setOTELTracerInContext(ctx, tracer)
+
+	sentryHub, err := initSentry(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	if sentryHub != nil {
+		ctx = sentry.SetHubOnContext(ctx, sentryHub)
+	}
 
 	return ctx, func() {
 		cancelCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -42,15 +50,21 @@ func Init() (context.Context, func(), error) {
 
 		go func() {
 			defer wg.Done()
-
 			_ = logger.Sync() // Intentionally ignoring err because we can't do anything about it
 		}()
 
 		go func() {
 			defer wg.Done()
-
 			_ = tp.Shutdown(cancelCtx) // Intentionally ignoring err because we can't do anything about it
 		}()
+
+		if sentryHub != nil {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				_ = sentryHub.Flush(10 * time.Second)
+			}()
+		}
 
 		wg.Wait()
 	}, nil
