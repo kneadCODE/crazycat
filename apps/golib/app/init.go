@@ -26,14 +26,7 @@ func Init() (context.Context, func(), error) {
 	}
 	ctx = setZapInContext(ctx, logger)
 
-	tp, err := newTracer(cfg)
-	if err != nil {
-		return nil, nil, err
-	}
-	tracer := tp.Tracer("main") // TODO: Check if we need to add some options here.
-	ctx = setOTELTracerInContext(ctx, tracer)
-
-	sentryHub, err := initSentry(cfg)
+	sentryHub, err := newSentry(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -41,18 +34,34 @@ func Init() (context.Context, func(), error) {
 		ctx = sentry.SetHubOnContext(ctx, sentryHub)
 	}
 
+	nrApp, err := newNewRelic(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	if nrApp != nil {
+		ctx = setNewRelicInContext(ctx, nrApp)
+	}
+
+	tp, err := newTracer(cfg, sentryHub != nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	tracer := tp.Tracer("main") // TODO: Check if we need to add some options here.
+	ctx = setOTELTracerInContext(ctx, tracer)
+
 	return ctx, func() {
 		cancelCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
 		var wg sync.WaitGroup
-		wg.Add(2)
 
+		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			_ = logger.Sync() // Intentionally ignoring err because we can't do anything about it
 		}()
 
+		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			_ = tp.Shutdown(cancelCtx) // Intentionally ignoring err because we can't do anything about it
@@ -63,6 +72,14 @@ func Init() (context.Context, func(), error) {
 			go func() {
 				defer wg.Done()
 				_ = sentryHub.Flush(10 * time.Second)
+			}()
+		}
+
+		if nrApp != nil {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				nrApp.Shutdown(10 * time.Second)
 			}()
 		}
 

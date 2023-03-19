@@ -19,7 +19,7 @@ const (
 	logFieldTraceFlags = "trace_flags"
 )
 
-func newTracer(cfg Config) (*sdktrace.TracerProvider, error) {
+func newTracer(cfg Config, isSentryEnabled bool) (*sdktrace.TracerProvider, error) {
 	res, err := getOTELResource(cfg)
 	if err != nil {
 		return nil, err
@@ -27,10 +27,12 @@ func newTracer(cfg Config) (*sdktrace.TracerProvider, error) {
 
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithResource(res),
-
-		sdktrace.WithSpanProcessor(sentryotel.NewSentrySpanProcessor()),
 		// TODO: Check what other options need to be set
 	)
+
+	if isSentryEnabled {
+		tp.RegisterSpanProcessor(sentryotel.NewSentrySpanProcessor())
+	}
 
 	// otel.SetTextMapPropagator(sentryotel.NewSentryPropagator()) // TODO: Look into writing custom propagator that can combine all propagators
 

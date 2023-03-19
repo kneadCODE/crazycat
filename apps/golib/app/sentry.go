@@ -1,12 +1,13 @@
 package app
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/getsentry/sentry-go"
 )
 
-func initSentry(cfg Config) (*sentry.Hub, error) {
+func newSentry(cfg Config) (*sentry.Hub, error) {
 	sentryDSN := os.Getenv("SENTRY_DSN")
 	if sentryDSN == "" {
 		return nil, nil
@@ -27,7 +28,7 @@ func initSentry(cfg Config) (*sentry.Hub, error) {
 		Environment:      string(cfg.Env),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("init sentry failed: %w", err)
 	}
 
 	return sentry.NewHub(client, nil), nil

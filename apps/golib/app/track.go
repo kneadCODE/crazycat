@@ -3,11 +3,14 @@ package app
 import (
 	"context"
 	"runtime"
+	"time"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap/zapcore"
 )
 
 // LogDebug logs the given message at debug level
@@ -25,6 +28,14 @@ func TrackInfoEvent(ctx context.Context, msg string, fields ...interface{}) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent(msg)
 
+	if nrApp := newRelicFromContext(ctx); nrApp != nil {
+		nrApp.RecordLog(newrelic.LogData{
+			Timestamp: time.Now().UnixMilli(),
+			Severity:  zapcore.InfoLevel.CapitalString(),
+			Message:   msg,
+		})
+	}
+
 	l := zapFromContext(ctx)
 	if l == nil {
 		return
@@ -37,6 +48,14 @@ func TrackInfoEvent(ctx context.Context, msg string, fields ...interface{}) {
 func TrackWarnEvent(ctx context.Context, msg string, fields ...interface{}) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent(msg)
+
+	if nrApp := newRelicFromContext(ctx); nrApp != nil {
+		nrApp.RecordLog(newrelic.LogData{
+			Timestamp: time.Now().UnixMilli(),
+			Severity:  zapcore.WarnLevel.CapitalString(),
+			Message:   msg,
+		})
+	}
 
 	l := zapFromContext(ctx)
 	if l == nil {
@@ -74,6 +93,14 @@ func TrackErrorEvent(ctx context.Context, err error, fields ...interface{}) {
 			&sentry.EventHint{Context: ctx},
 			scope,
 		)
+	}
+
+	if nrApp := newRelicFromContext(ctx); nrApp != nil {
+		nrApp.RecordLog(newrelic.LogData{
+			Timestamp: time.Now().UnixMilli(),
+			Severity:  zapcore.ErrorLevel.CapitalString(),
+			Message:   err.Error(),
+		})
 	}
 
 	l := zapFromContext(ctx)
