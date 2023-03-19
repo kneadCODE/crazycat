@@ -29,3 +29,16 @@ require (
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace (
+	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 => golang.org/x/crypto v0.7.0
+	golang.org/x/net v0.0.0-20180724234803-3673e40ba225 => golang.org/x/net v0.8.0
+	golang.org/x/net v0.0.0-20180826012351-8a410e7b638d => golang.org/x/net v0.8.0
+	golang.org/x/net v0.0.0-20190213061140-3a22650c66bd => golang.org/x/net v0.8.0
+	golang.org/x/net v0.0.0-20190311183353-d8887717615a => golang.org/x/net v0.8.0
+	golang.org/x/net v0.0.0-20221002022538-bcab6841153b => golang.org/x/net v0.8.0
+	golang.org/x/sys v0.0.0-20180830151530-49385e6e1522 => golang.org/x/sys v0.6.0
+	golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a => golang.org/x/sys v0.6.0
+	golang.org/x/text v0.3.0 => golang.org/x/text v0.8.0
+	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c => gopkg.in/yaml.v3 v3.0.1
+)
