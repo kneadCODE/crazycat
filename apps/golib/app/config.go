@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"os"
 
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
@@ -18,13 +17,11 @@ type Config struct {
 
 func newConfigFromEnv() (Config, error) {
 	cfg := Config{
-		Name:    os.Getenv(string(semconv.ServiceNameKey)),
-		Project: os.Getenv(string(semconv.ServiceNamespaceKey)),
-		Env:     Environment(os.Getenv(string(semconv.DeploymentEnvironmentKey))),
-		ServerInstanceID: fmt.Sprintf("%s:%s",
-			os.Getenv(os.Getenv(string(semconv.K8SPodUIDKey))),
-			os.Getenv(os.Getenv(string(semconv.K8SNodeUIDKey))),
-		),
+		Name:             os.Getenv(string(semconv.ServiceNameKey)),
+		Project:          os.Getenv(string(semconv.ServiceNamespaceKey)),
+		Env:              Environment(os.Getenv(string(semconv.DeploymentEnvironmentKey))),
+		Version:          os.Getenv(string(semconv.ServiceVersionKey)),
+		ServerInstanceID: os.Getenv(string(semconv.ServiceInstanceIDKey)),
 	}
 
 	// TODO: Add validation

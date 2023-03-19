@@ -33,6 +33,7 @@ func getOTELResource(cfg Config) (*resource.Resource, error) {
 		semconv.ServiceNamespace(cfg.Project),
 		semconv.ServiceVersion(cfg.Version),
 		semconv.ServiceInstanceID(cfg.ServerInstanceID),
+		semconv.DeploymentEnvironment(string(cfg.Env)),
 
 		semconv.OSTypeKey.String(runtime.GOOS),
 

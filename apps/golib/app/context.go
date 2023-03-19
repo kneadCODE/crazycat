@@ -27,12 +27,12 @@ func setConfigInContext(ctx context.Context, cfg Config) context.Context {
 	return context.WithValue(ctx, configCtxKey, cfg)
 }
 
-func setZapInContext(ctx context.Context, l *zap.Logger) context.Context {
+func setZapInContext(ctx context.Context, l *zap.SugaredLogger) context.Context {
 	return context.WithValue(ctx, zapCtxKey, l)
 }
 
-func zapFromContext(ctx context.Context) *zap.Logger {
-	if l, ok := ctx.Value(zapCtxKey).(*zap.Logger); ok {
+func zapFromContext(ctx context.Context) *zap.SugaredLogger {
+	if l, ok := ctx.Value(zapCtxKey).(*zap.SugaredLogger); ok {
 		return l
 	}
 	return nil
