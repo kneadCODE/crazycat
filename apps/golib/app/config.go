@@ -15,7 +15,7 @@ type Config struct {
 	ServerInstanceID string
 }
 
-func newConfigFromEnv() (Config, error) {
+func newConfig() (Config, error) {
 	cfg := Config{
 		Name:             os.Getenv(string(semconv.ServiceNameKey)),
 		Project:          os.Getenv(string(semconv.ServiceNamespaceKey)),

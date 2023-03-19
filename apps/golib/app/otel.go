@@ -19,7 +19,7 @@ const (
 	logFieldTraceFlags = "trace_flags"
 )
 
-func newTracer(cfg Config, isSentryEnabled bool) (*sdktrace.TracerProvider, error) {
+func newOTELProvider(cfg Config, isSentryEnabled bool) (*sdktrace.TracerProvider, error) {
 	res, err := getOTELResource(cfg)
 	if err != nil {
 		return nil, err

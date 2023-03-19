@@ -8,11 +8,11 @@ import (
 	"github.com/getsentry/sentry-go"
 )
 
-// Init initalizes the application by setting up the logger, tracer and error reporter.
+// Init initializes the application by setting up the logger, tracer and error reporter.
 func Init() (context.Context, func(), error) {
 	ctx := context.Background()
 
-	cfg, err := newConfigFromEnv()
+	cfg, err := newConfigF()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -20,13 +20,13 @@ func Init() (context.Context, func(), error) {
 
 	// TODO: Add log line to inform that processing has started
 
-	logger, err := newZap(cfg)
+	logger, err := newZapF(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
 	ctx = setZapInContext(ctx, logger)
 
-	sentryHub, err := newSentry(cfg)
+	sentryHub, err := newSentryF(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -34,7 +34,7 @@ func Init() (context.Context, func(), error) {
 		ctx = sentry.SetHubOnContext(ctx, sentryHub)
 	}
 
-	nrApp, err := newNewRelic(cfg)
+	nrApp, err := newNewRelicF(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -42,7 +42,7 @@ func Init() (context.Context, func(), error) {
 		ctx = setNewRelicInContext(ctx, nrApp)
 	}
 
-	tp, err := newTracer(cfg, sentryHub != nil)
+	tp, err := newOTELProviderF(cfg, sentryHub != nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -86,3 +86,12 @@ func Init() (context.Context, func(), error) {
 		wg.Wait()
 	}, nil
 }
+
+// The following are for stubbing in tests
+var (
+	newConfigF       = newConfig
+	newZapF          = newZap
+	newSentryF       = newSentry
+	newNewRelicF     = newNewRelic
+	newOTELProviderF = newOTELProvider
+)

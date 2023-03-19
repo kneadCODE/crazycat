@@ -15,7 +15,7 @@ func TestSomething(t *testing.T) {
 	require.NoError(t, os.Setenv(string(semconv.ServiceNamespaceKey), "project"))
 	require.NoError(t, os.Setenv(string(semconv.ServiceVersionKey), "v1.0.0"))
 	require.NoError(t, os.Setenv(string(semconv.ServiceInstanceIDKey), "instance"))
-	require.NoError(t, os.Setenv(string(semconv.DeploymentEnvironmentKey), "dev"))
+	require.NoError(t, os.Setenv(string(semconv.DeploymentEnvironmentKey), "development"))
 	defer os.Unsetenv(string(semconv.ServiceNameKey))
 	defer os.Unsetenv(string(semconv.ServiceNamespaceKey))
 	defer os.Unsetenv(string(semconv.ServiceVersionKey))

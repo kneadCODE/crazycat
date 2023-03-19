@@ -9,5 +9,5 @@ const (
 	// EnvStaging represents Staging environment
 	EnvStaging = Environment("staging")
 	// EnvDev represents Development environment
-	EnvDev = Environment("dev")
+	EnvDev = Environment("development")
 )
