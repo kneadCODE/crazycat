@@ -8,9 +8,9 @@ module "enterprise_scale" {
     azurerm.management   = azurerm
   }
 
-  root_parent_id   = data.azurerm_client_config.core.tenant_id
-  root_id          = var.root_id
-  root_name        = var.root_name
+  root_parent_id   = var.caf_mg_root_parent_id
+  root_id          = "crazycat"
+  root_name        = "crazycat"
   library_path     = "${path.root}/caflib"
   default_location = local.location
 
