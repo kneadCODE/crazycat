@@ -1,9 +1,4 @@
-variable "root_id" {
-  type    = string
-  default = "crazycat"
-}
-
-variable "root_name" {
-  type    = string
-  default = "crazycat"
+variable "caf_mg_root_parent_id" {
+  description = "The root management group ID for CAF"
+  type        = string
 }
