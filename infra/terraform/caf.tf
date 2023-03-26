@@ -80,6 +80,21 @@ module "enterprise_scale" {
     }
   }
 
+  deploy_identity_resources = true
+  subscription_id_identity  = var.caf_subscription_id_identity
+  configure_identity_resources = {
+    settings = {
+      identity = {
+        enabled = true # Enabling this more for demo. No resources are deployed, so should not cost money.
+        config = {
+          enable_deny_public_ip             = true
+          enable_deny_rdp_from_internet     = true
+          enable_deny_subnet_without_nsg    = true
+          enable_deploy_azure_backup_on_vms = true # Since we are not really deploying anything in identity, it is ok to turn this on as it won't incur any cost.
+        }
+      }
+    }
+  }
+
   deploy_connectivity_resources = false
-  deploy_identity_resources     = false
 }
