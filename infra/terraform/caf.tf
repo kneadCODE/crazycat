@@ -1,3 +1,40 @@
+locals {
+  caf_root_id = "crazycat"
+
+  caf_corp_mg_default_archetype = {
+    archetype_id = "es_corp"
+    parameters = {
+      Deny-Resource-Locations = {
+        listOfAllowedLocations = [
+          local.location,
+        ]
+      }
+      Deny-RSG-Locations = {
+        listOfAllowedLocations = [
+          local.location,
+        ]
+      }
+    }
+    access_control = {}
+  }
+  caf_online_mg_default_archetype = {
+    archetype_id = "es_corp"
+    parameters = {
+      Deny-Resource-Locations = {
+        listOfAllowedLocations = [
+          local.location,
+        ]
+      }
+      Deny-RSG-Locations = {
+        listOfAllowedLocations = [
+          local.location,
+        ]
+      }
+    }
+    access_control = {}
+  }
+}
+
 module "enterprise_scale" {
   source  = "Azure/caf-enterprise-scale/azurerm"
   version = "3.3.0"
@@ -9,15 +46,16 @@ module "enterprise_scale" {
   }
 
   root_parent_id   = var.caf_mg_root_parent_id
-  root_id          = "crazycat"
-  root_name        = "crazycat"
+  root_id          = local.caf_root_id
+  root_name        = local.caf_root_id
   library_path     = "${path.root}/caflib"
   default_location = local.location
 
-  deploy_core_landing_zones = true
-  deploy_corp_landing_zones = false
-  deploy_demo_landing_zones = false
-  deploy_sap_landing_zones  = false
+  deploy_core_landing_zones   = true
+  deploy_corp_landing_zones   = true
+  deploy_demo_landing_zones   = false
+  deploy_online_landing_zones = true
+  deploy_sap_landing_zones    = false
 
   deploy_management_resources = true
   subscription_id_management  = var.caf_subscription_id_management
@@ -97,4 +135,31 @@ module "enterprise_scale" {
   }
 
   deploy_connectivity_resources = false
+
+  custom_landing_zones = {
+    "${local.caf_root_id}-tool" = {
+      display_name               = "Tooling"
+      parent_management_group_id = "${local.caf_root_id}-corp"
+      archetype_config           = local.caf_corp_mg_default_archetype
+      subscription_ids           = []
+    }
+    "${local.caf_root_id}-data" = {
+      display_name               = "Data"
+      parent_management_group_id = "${local.caf_root_id}-corp"
+      archetype_config           = local.caf_corp_mg_default_archetype
+      subscription_ids           = []
+    }
+    "${local.caf_root_id}-compute" = {
+      display_name               = "Compute"
+      parent_management_group_id = "${local.caf_root_id}-corp"
+      archetype_config           = local.caf_corp_mg_default_archetype
+      subscription_ids           = []
+    }
+    "${local.caf_root_id}-web" = {
+      display_name               = "Web"
+      parent_management_group_id = "${local.caf_root_id}-online"
+      archetype_config           = local.caf_online_mg_default_archetype
+      subscription_ids           = []
+    }
+  }
 }
