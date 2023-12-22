@@ -1,5 +1,9 @@
 package app
 
+import (
+	"fmt"
+)
+
 // Environment denotes the environment where the app is running.
 type Environment string
 
@@ -11,3 +15,16 @@ const (
 	// EnvDev represents Development environment
 	EnvDev = Environment("development")
 )
+
+// String returns the string representation of the environment
+func (e Environment) String() string {
+	return string(e)
+}
+
+// IsValid checks if the environment is valid or not
+func (e Environment) IsValid() error {
+	if e != EnvDev && e != EnvStaging && e != EnvProd {
+		return fmt.Errorf("invalid env: %w", ErrInvalidConfig)
+	}
+	return nil
+}

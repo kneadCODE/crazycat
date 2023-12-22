@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"runtime"
+	"runtime/debug"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -14,7 +15,7 @@ import (
 )
 
 // TrackDebugEvent logs the given message at debug level
-func TrackDebugEvent(ctx context.Context, msg string, fields ...interface{}) {
+func TrackDebugEvent(ctx context.Context, msg string, fields ...any) {
 	l := zapFromContext(ctx)
 	if l == nil {
 		return
@@ -24,7 +25,7 @@ func TrackDebugEvent(ctx context.Context, msg string, fields ...interface{}) {
 }
 
 // TrackInfoEvent logs the given message at info level and adds an event to the span (if exists)
-func TrackInfoEvent(ctx context.Context, msg string, fields ...interface{}) {
+func TrackInfoEvent(ctx context.Context, msg string, fields ...any) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent(msg)
 
@@ -45,7 +46,7 @@ func TrackInfoEvent(ctx context.Context, msg string, fields ...interface{}) {
 }
 
 // TrackWarnEvent logs the given message at warn level and adds an event to the span (if exists)
-func TrackWarnEvent(ctx context.Context, msg string, fields ...interface{}) {
+func TrackWarnEvent(ctx context.Context, msg string, fields ...any) {
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent(msg)
 
@@ -66,10 +67,8 @@ func TrackWarnEvent(ctx context.Context, msg string, fields ...interface{}) {
 }
 
 // TrackErrorEvent logs the given message at error level and also reports the error
-func TrackErrorEvent(ctx context.Context, err error, fields ...interface{}) {
-	stackTraceSlice := make([]byte, 2048)
-	n := runtime.Stack(stackTraceSlice, false)
-	stackTrace := string(stackTraceSlice[0:n])
+func TrackErrorEvent(ctx context.Context, err error, fields ...any) {
+	stackTrace := string(debug.Stack())
 
 	span := trace.SpanFromContext(ctx)
 
@@ -111,7 +110,7 @@ func TrackErrorEvent(ctx context.Context, err error, fields ...interface{}) {
 	l.Errorw(err.Error(), injectOTELSpanFields(span, fields...)...)
 }
 
-func injectOTELSpanFields(span trace.Span, fields ...interface{}) []interface{} {
+func injectOTELSpanFields(span trace.Span, fields ...any) []any {
 	if v := span.SpanContext(); v.IsValid() {
 		fields = append(fields,
 			logFieldTraceID, v.TraceID(),

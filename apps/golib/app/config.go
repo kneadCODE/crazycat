@@ -37,8 +37,8 @@ func newConfig() (Config, error) {
 		return Config{}, fmt.Errorf("project is empty: %w", ErrInvalidConfig)
 	}
 
-	if cfg.Env != EnvDev && cfg.Env != EnvStaging && cfg.Env != EnvProd {
-		return Config{}, fmt.Errorf("invalid env: %w", ErrInvalidConfig)
+	if err := cfg.Env.IsValid(); err != nil {
+		return Config{}, err
 	}
 
 	if cfg.Version == "" {
