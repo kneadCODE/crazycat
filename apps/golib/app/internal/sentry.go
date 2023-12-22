@@ -1,13 +1,15 @@
-package app
+package internal
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/kneadCODE/crazycat/apps/golib/app"
 )
 
-func newSentry(cfg Config) (*sentry.Hub, error) {
+// NewSentryHub returns a new instance of sentry.Hub
+func NewSentryHub(cfg app.Config) (*sentry.Hub, error) {
 	sentryDSN := os.Getenv("SENTRY_DSN")
 	if sentryDSN == "" {
 		return nil, nil

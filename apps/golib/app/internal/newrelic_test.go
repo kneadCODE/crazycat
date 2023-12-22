@@ -1,17 +1,18 @@
-package app
+package internal
 
 import (
 	"errors"
 	"os"
 	"testing"
 
+	"github.com/kneadCODE/crazycat/apps/golib/app"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_newNewRelic(t *testing.T) {
+func Test_NewNewRelicApp(t *testing.T) {
 	type testCase struct {
 		givenLicense string
-		givenCfg     Config
+		givenCfg     app.Config
 		expErr       error
 		expApp       bool
 	}
@@ -27,7 +28,7 @@ func Test_newNewRelic(t *testing.T) {
 		},
 		"enabled": {
 			givenLicense: "1234567890123456789012345678901234567890",
-			givenCfg:     Config{Name: "name"},
+			givenCfg:     app.Config{Name: "name"},
 			expApp:       true,
 		},
 	}
@@ -38,7 +39,7 @@ func Test_newNewRelic(t *testing.T) {
 			require.NoError(t, os.Setenv("NEW_RELIC_LICENSE_KEY", tc.givenLicense))
 
 			// When:
-			nrApp, err := newNewRelic(tc.givenCfg)
+			nrApp, err := NewNewRelicApp(tc.givenCfg)
 
 			// Then:
 			if tc.expErr != nil {

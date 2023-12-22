@@ -1,28 +1,29 @@
-package app
+package internal
 
 import (
 	"testing"
 
+	"github.com/kneadCODE/crazycat/apps/golib/app"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_newZap(t *testing.T) {
+func Test_NewZap(t *testing.T) {
 	// Given: && When:
-	l, err := newZap(Config{Name: "name", Env: EnvDev})
+	l, err := NewZap(app.Config{Name: "name", Env: app.EnvDev})
 
 	// Then:
 	require.NoError(t, err)
 	require.NotNil(t, l)
 
 	// Given: && When:
-	l, err = newZap(Config{Name: "name", Env: EnvStaging})
+	l, err = NewZap(app.Config{Name: "name", Env: app.EnvStaging})
 
 	// Then:
 	require.NoError(t, err)
 	require.NotNil(t, l)
 
 	// Given: && When:
-	l, err = newZap(Config{Name: "name", Env: EnvProd})
+	l, err = NewZap(app.Config{Name: "name", Env: app.EnvProd})
 
 	// Then:
 	require.NoError(t, err)

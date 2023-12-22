@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/kneadCODE/crazycat/apps/golib/app/internal"
 )
 
 // Init initializes the application by setting up the logger, tracer and error reporter.
@@ -44,7 +45,13 @@ func Init() (context.Context, func(), error) {
 		ctx = setNewRelicInContext(ctx, nrApp)
 	}
 
-	tp, err := newOTELProviderF(cfg, sentryHub != nil)
+	tp, err := newOTELProviderF(internal.OTELMetadata{
+		AppName:          cfg.Name,
+		AppEnv:           cfg.Env.String(),
+		AppVersion:       cfg.Version,
+		Project:          cfg.Project,
+		ServerInstanceID: cfg.ServerInstanceID,
+	}, sentryHub != nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -92,8 +99,8 @@ func Init() (context.Context, func(), error) {
 // The following are for stubbing in tests
 var (
 	newConfigF       = newConfig
-	newZapF          = newZap
-	newSentryF       = newSentry
-	newNewRelicF     = newNewRelic
-	newOTELProviderF = newOTELProvider
+	newZapF          = internal.NewZap
+	newSentryF       = internal.NewSentryHub
+	newNewRelicF     = internal.NewNewRelicApp
+	newOTELProviderF = internal.NewOTELProvider
 )

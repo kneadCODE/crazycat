@@ -1,14 +1,15 @@
-package app
+package internal
 
 import (
 	"errors"
 	"os"
 	"testing"
 
+	"github.com/kneadCODE/crazycat/apps/golib/app"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_newSentry(t *testing.T) {
+func Test_NewSentryHub(t *testing.T) {
 	type testCase struct {
 		givenDSNKey string
 		expErr      error
@@ -32,7 +33,7 @@ func Test_newSentry(t *testing.T) {
 			require.NoError(t, os.Setenv("SENTRY_DSN", tc.givenDSNKey))
 
 			// When:
-			hub, err := newSentry(Config{})
+			hub, err := NewSentryHub(app.Config{})
 
 			// Then:
 			if tc.expErr != nil {

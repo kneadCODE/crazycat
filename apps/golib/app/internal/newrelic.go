@@ -1,15 +1,17 @@
-package app
+package internal
 
 import (
 	"fmt"
 	"net/http"
 	"os"
 
+	"github.com/kneadCODE/crazycat/apps/golib/app"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )
 
-func newNewRelic(cfg Config) (*newrelic.Application, error) {
+// NewNewRelicApp returns a new instance of newrelic.Application
+func NewNewRelicApp(cfg app.Config) (*newrelic.Application, error) {
 	license := os.Getenv("NEW_RELIC_LICENSE_KEY")
 	if license == "" {
 		return nil, nil

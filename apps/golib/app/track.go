@@ -2,11 +2,11 @@ package app
 
 import (
 	"context"
-	"runtime"
 	"runtime/debug"
 	"time"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/kneadCODE/crazycat/apps/golib/app/internal"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
@@ -21,7 +21,7 @@ func TrackDebugEvent(ctx context.Context, msg string, fields ...any) {
 		return
 	}
 
-	l.Debugw(msg, injectOTELSpanFields(trace.SpanFromContext(ctx), fields...)...)
+	l.Debugw(msg, internal.AppendOTELSpanFields(trace.SpanFromContext(ctx), fields...)...)
 }
 
 // TrackInfoEvent logs the given message at info level and adds an event to the span (if exists)
@@ -42,7 +42,7 @@ func TrackInfoEvent(ctx context.Context, msg string, fields ...any) {
 		return
 	}
 
-	l.Infow(msg, injectOTELSpanFields(span, fields...)...)
+	l.Infow(msg, internal.AppendOTELSpanFields(span, fields...)...)
 }
 
 // TrackWarnEvent logs the given message at warn level and adds an event to the span (if exists)
@@ -63,7 +63,7 @@ func TrackWarnEvent(ctx context.Context, msg string, fields ...any) {
 		return
 	}
 
-	l.Warnw(msg, injectOTELSpanFields(span, fields...)...)
+	l.Warnw(msg, internal.AppendOTELSpanFields(span, fields...)...)
 }
 
 // TrackErrorEvent logs the given message at error level and also reports the error
@@ -73,7 +73,7 @@ func TrackErrorEvent(ctx context.Context, err error, fields ...any) {
 	span := trace.SpanFromContext(ctx)
 
 	attrs := []attribute.KeyValue{semconv.ExceptionStacktraceKey.String(stackTrace)}
-	if fn, file, line, ok := runtimeCaller(1); ok {
+	if fn, file, line, ok := internal.RuntimeCaller(1); ok {
 		if fn != "" {
 			attrs = append(attrs, semconv.CodeFunctionKey.String(fn))
 		}
@@ -107,26 +107,5 @@ func TrackErrorEvent(ctx context.Context, err error, fields ...any) {
 		return
 	}
 
-	l.Errorw(err.Error(), injectOTELSpanFields(span, fields...)...)
-}
-
-func injectOTELSpanFields(span trace.Span, fields ...any) []any {
-	if v := span.SpanContext(); v.IsValid() {
-		fields = append(fields,
-			logFieldTraceID, v.TraceID(),
-			logFieldSpanID, v.SpanID(),
-			logFieldTraceFlags, v.TraceFlags(),
-		)
-	}
-	return fields
-}
-
-func runtimeCaller(skip int) (fn, file string, line int, ok bool) {
-	rpc := make([]uintptr, 1)
-	n := runtime.Callers(skip+1, rpc[:])
-	if n < 1 {
-		return
-	}
-	frame, _ := runtime.CallersFrames(rpc).Next()
-	return frame.Function, frame.File, frame.Line, frame.PC != 0
+	l.Errorw(err.Error(), internal.AppendOTELSpanFields(span, fields...)...)
 }

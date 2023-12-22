@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/kneadCODE/crazycat/apps/golib/app/internal"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/stretchr/testify/require"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -204,10 +205,10 @@ func TestInit(t *testing.T) {
 			// Given:
 			defer func() {
 				newConfigF = newConfig
-				newZapF = newZap
-				newSentryF = newSentry
-				newNewRelicF = newNewRelic
-				newOTELProviderF = newOTELProvider
+				newZapF = internal.NewZap
+				newSentryF = internal.NewSentryHub
+				newNewRelicF = internal.NewNewRelicApp
+				newOTELProviderF = internal.NewOTELProvider
 			}()
 			newConfigF = func() (Config, error) {
 				return tc.givenConfig, tc.givenConfigErr

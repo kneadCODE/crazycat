@@ -1,4 +1,4 @@
-package app
+package internal
 
 import (
 	"fmt"
@@ -14,13 +14,25 @@ import (
 )
 
 const (
-	logFieldTraceID    = "trace_id"
-	logFieldSpanID     = "span_id"
+	// logFieldTraceID is the field used for OTEL trace ID
+	logFieldTraceID = "trace_id"
+	// logFieldSpanID is the field used for OTEL span ID
+	logFieldSpanID = "span_id"
+	// logFieldTraceFlags is the field used for OTEL trace flags
 	logFieldTraceFlags = "trace_flags"
 )
 
-func newOTELProvider(cfg Config, isSentryEnabled bool) (*sdktrace.TracerProvider, error) {
-	res, err := newOTELResource(cfg)
+type OTELMetadata struct {
+	AppName          string
+	AppEnv           string
+	AppVersion       string
+	Project          string
+	ServerInstanceID string
+}
+
+// NewOTELProvider returns a new instance of OTEL provider
+func NewOTELProvider(metadata OTELMetadata, isSentryEnabled bool) (*sdktrace.TracerProvider, error) {
+	res, err := newOTELResource(metadata)
 	if err != nil {
 		return nil, err
 	}
@@ -40,13 +52,13 @@ func newOTELProvider(cfg Config, isSentryEnabled bool) (*sdktrace.TracerProvider
 }
 
 // TODO: Add comprehensive tests for the resource creation
-func newOTELResource(cfg Config) (*resource.Resource, error) {
+func newOTELResource(m OTELMetadata) (*resource.Resource, error) {
 	attrs := []attribute.KeyValue{
-		semconv.ServiceName(cfg.Name),
-		semconv.ServiceNamespace(cfg.Project),
-		semconv.ServiceVersion(cfg.Version),
-		semconv.ServiceInstanceID(cfg.ServerInstanceID),
-		semconv.DeploymentEnvironment(string(cfg.Env)),
+		semconv.ServiceName(m.AppName),
+		semconv.ServiceNamespace(m.Project),
+		semconv.ServiceVersion(m.AppVersion),
+		semconv.ServiceInstanceID(m.ServerInstanceID),
+		semconv.DeploymentEnvironment(m.AppEnv),
 
 		semconv.OSTypeKey.String(runtime.GOOS),
 
