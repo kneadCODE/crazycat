@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kneadCODE/crazycat/apps/golib/app/config"
 	"github.com/kneadCODE/crazycat/apps/golib/app/internal"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/stretchr/testify/require"
@@ -21,7 +22,7 @@ func TestTrackDebugEvent(t *testing.T) {
 	TrackDebugEvent(ctx, "message", "k1", "v1", "k2", 2, "k3", 3.0, "k4", true, "k5", 100*time.Second)
 
 	// Given:
-	l, err := internal.NewZap(Config{})
+	l, err := internal.NewZap(config.Config{})
 	require.NoError(t, err)
 	ctx = setZapInContext(ctx, l)
 	// When && Then:
@@ -29,7 +30,7 @@ func TestTrackDebugEvent(t *testing.T) {
 	TrackDebugEvent(ctx, "message", "k1", "v1", "k2", 2, "k3", 3.0, "k4", true, "k5", 100*time.Second)
 
 	// Given:
-	l, err = internal.NewZap(Config{Env: EnvDev})
+	l, err = internal.NewZap(config.Config{Env: config.EnvDev})
 	require.NoError(t, err)
 	ctx = setZapInContext(ctx, l)
 	// When && Then:
@@ -45,7 +46,7 @@ func TestTrackInfoEvent(t *testing.T) {
 	TrackInfoEvent(ctx, "message", "k1", "v1", "k2", 2, "k3", 3.0, "k4", true, "k5", 100*time.Second)
 
 	// Given:
-	l, err := internal.NewZap(Config{})
+	l, err := internal.NewZap(config.Config{})
 	require.NoError(t, err)
 	ctx = setZapInContext(ctx, l)
 	// When && Then:
@@ -53,7 +54,7 @@ func TestTrackInfoEvent(t *testing.T) {
 	TrackInfoEvent(ctx, "message", "k1", "v1", "k2", 2, "k3", 3.0, "k4", true, "k5", 100*time.Second)
 
 	// Given:
-	l, err = internal.NewZap(Config{Env: EnvDev})
+	l, err = internal.NewZap(config.Config{Env: config.EnvDev})
 	require.NoError(t, err)
 	ctx = setZapInContext(ctx, l)
 	// When && Then:
@@ -84,7 +85,7 @@ func TestTrackWarnEvent(t *testing.T) {
 	TrackWarnEvent(ctx, "message", "k1", "v1", "k2", 2, "k3", 3.0, "k4", true, "k5", 100*time.Second)
 
 	// Given:
-	l, err := internal.NewZap(Config{})
+	l, err := internal.NewZap(config.Config{})
 	require.NoError(t, err)
 	ctx = setZapInContext(ctx, l)
 	// When && Then:
@@ -92,7 +93,7 @@ func TestTrackWarnEvent(t *testing.T) {
 	TrackWarnEvent(ctx, "message", "k1", "v1", "k2", 2, "k3", 3.0, "k4", true, "k5", 100*time.Second)
 
 	// Given:
-	l, err = internal.NewZap(Config{Env: EnvDev})
+	l, err = internal.NewZap(config.Config{Env: config.EnvDev})
 	require.NoError(t, err)
 	ctx = setZapInContext(ctx, l)
 	// When && Then:
@@ -123,7 +124,7 @@ func TestTrackErrorEvent(t *testing.T) {
 	TrackErrorEvent(ctx, errors.New("some err"), "k1", "v1", "k2", 2, "k3", 3.0, "k4", true, "k5", 100*time.Second)
 
 	// Given:
-	l, err := internal.NewZap(Config{})
+	l, err := internal.NewZap(config.Config{})
 	require.NoError(t, err)
 	ctx = setZapInContext(ctx, l)
 	// When && Then:
@@ -131,7 +132,7 @@ func TestTrackErrorEvent(t *testing.T) {
 	TrackErrorEvent(ctx, errors.New("some err"), "k1", "v1", "k2", 2, "k3", 3.0, "k4", true, "k5", 100*time.Second)
 
 	// Given:
-	l, err = internal.NewZap(Config{Env: EnvDev})
+	l, err = internal.NewZap(config.Config{Env: config.EnvDev})
 	require.NoError(t, err)
 	ctx = setZapInContext(ctx, l)
 	// When && Then:

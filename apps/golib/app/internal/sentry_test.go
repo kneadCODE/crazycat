@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kneadCODE/crazycat/apps/golib/app"
+	"github.com/kneadCODE/crazycat/apps/golib/app/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,7 +33,7 @@ func Test_NewSentryHub(t *testing.T) {
 			require.NoError(t, os.Setenv("SENTRY_DSN", tc.givenDSNKey))
 
 			// When:
-			hub, err := NewSentryHub(app.Config{})
+			hub, err := NewSentryHub(config.Config{})
 
 			// Then:
 			if tc.expErr != nil {

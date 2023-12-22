@@ -3,17 +3,18 @@ package app
 import (
 	"context"
 
+	"github.com/kneadCODE/crazycat/apps/golib/app/config"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
 // ConfigFromContext retrieves the Config from context if exists else return a new Config
-func ConfigFromContext(ctx context.Context) Config {
-	if v, ok := ctx.Value(configCtxKey).(Config); ok {
+func ConfigFromContext(ctx context.Context) config.Config {
+	if v, ok := ctx.Value(configCtxKey).(config.Config); ok {
 		return v
 	}
-	return Config{}
+	return config.Config{}
 }
 
 // contextKey implementation is referenced from go stdlib:
@@ -31,7 +32,7 @@ var (
 	newrelicCtxKey   = contextKey{"app_newrelic"}
 )
 
-func setConfigInContext(ctx context.Context, cfg Config) context.Context {
+func setConfigInContext(ctx context.Context, cfg config.Config) context.Context {
 	return context.WithValue(ctx, configCtxKey, cfg)
 }
 

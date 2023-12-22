@@ -4,18 +4,21 @@ package app
 
 import (
 	"context"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/kneadCODE/crazycat/apps/golib/app/config"
 	"github.com/kneadCODE/crazycat/apps/golib/app/internal"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 )
 
 // Init initializes the application by setting up the logger, tracer and error reporter.
 func Init() (context.Context, func(), error) {
 	ctx := context.Background()
 
-	cfg, err := newConfigF()
+	cfg, err := newConfigFromEnvF()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -45,18 +48,10 @@ func Init() (context.Context, func(), error) {
 		ctx = setNewRelicInContext(ctx, nrApp)
 	}
 
-	tp, err := newOTELProviderF(internal.OTELMetadata{
-		AppName:          cfg.Name,
-		AppEnv:           cfg.Env.String(),
-		AppVersion:       cfg.Version,
-		Project:          cfg.Project,
-		ServerInstanceID: cfg.ServerInstanceID,
-	}, sentryHub != nil)
+	otelShutdown, err := initOTELF(cfg, sentryHub != nil)
 	if err != nil {
 		return nil, nil, err
 	}
-	tracer := tp.Tracer("main") // TODO: Check if we need to add some options here.
-	ctx = setOTELTracerInContext(ctx, tracer)
 
 	return ctx, func() {
 		cancelCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -73,7 +68,7 @@ func Init() (context.Context, func(), error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_ = tp.Shutdown(cancelCtx) // Intentionally ignoring err because we can't do anything about it
+			_ = otelShutdown(cancelCtx) // Intentionally ignoring err because we can't do anything about it
 		}()
 
 		if sentryHub != nil {
@@ -98,9 +93,27 @@ func Init() (context.Context, func(), error) {
 
 // The following are for stubbing in tests
 var (
-	newConfigF       = newConfig
-	newZapF          = internal.NewZap
-	newSentryF       = internal.NewSentryHub
-	newNewRelicF     = internal.NewNewRelicApp
-	newOTELProviderF = internal.NewOTELProvider
+	newZapF      = internal.NewZap
+	newSentryF   = internal.NewSentryHub
+	newNewRelicF = internal.NewNewRelicApp
+	initOTELF    = internal.InitOTEL
 )
+
+// newConfigFromEnv initalizes a new config from environment
+func newConfigFromEnv() (config.Config, error) {
+	cfg := config.Config{
+		Name:             os.Getenv(string(semconv.ServiceNameKey)),
+		Project:          os.Getenv(string(semconv.ServiceNamespaceKey)),
+		Env:              config.Environment(os.Getenv(string(semconv.DeploymentEnvironmentKey))),
+		Version:          os.Getenv(string(semconv.ServiceVersionKey)),
+		ServerInstanceID: os.Getenv(string(semconv.ServiceInstanceIDKey)),
+	}
+
+	if err := cfg.IsValid(); err != nil {
+		return config.Config{}, err
+	}
+
+	return cfg, nil
+}
+
+var newConfigFromEnvF = newConfigFromEnv
