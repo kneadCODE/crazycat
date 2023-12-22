@@ -21,3 +21,4 @@ exclude_paths:
   - 'apps/**/vendor/**'
   - 'apps/**/*_gen.go'
   - 'apps/**/mock_*.go'
+  - 'apps/**/*_test.go'
