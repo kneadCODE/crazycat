@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/getsentry/sentry-go v0.19.0
 	github.com/getsentry/sentry-go/otel v0.19.0
+	github.com/go-chi/chi/v5 v5.0.11
 	github.com/newrelic/go-agent/v3 v3.20.4
 	github.com/stretchr/testify v1.8.2
 	go.opentelemetry.io/otel v1.14.0
