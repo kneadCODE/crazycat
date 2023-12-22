@@ -1,18 +1,19 @@
-package app
+package internal
 
 import (
 	"fmt"
 
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	"github.com/kneadCODE/crazycat/apps/golib/app/config"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-func newZap(cfg Config) (*zap.SugaredLogger, error) {
+func NewZap(cfg config.Config) (*zap.SugaredLogger, error) {
 	var zapCfg zap.Config
 
 	switch cfg.Env {
-	case EnvDev:
+	case config.EnvDev:
 		zapCfg = zap.Config{
 			Level: zap.NewAtomicLevelAt(zapcore.DebugLevel),
 			// Development: true,

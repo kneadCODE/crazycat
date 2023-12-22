@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kneadCODE/crazycat/apps/golib/app/config"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/stretchr/testify/require"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -18,10 +19,10 @@ func TestConfigFromContext(t *testing.T) {
 	cfg := ConfigFromContext(ctx)
 
 	// Then:
-	require.EqualValues(t, Config{}, cfg)
+	require.EqualValues(t, config.Config{}, cfg)
 
 	// When:
-	newCfg := Config{Name: "something"}
+	newCfg := config.Config{Name: "something"}
 	ctx = context.WithValue(ctx, configCtxKey, newCfg)
 
 	// When:
@@ -39,10 +40,10 @@ func Test_setConfigInContext(t *testing.T) {
 	cfg := ConfigFromContext(ctx)
 
 	// Then:
-	require.EqualValues(t, Config{}, cfg)
+	require.EqualValues(t, config.Config{}, cfg)
 
 	// When:
-	newCfg := Config{Name: "something"}
+	newCfg := config.Config{Name: "something"}
 	ctx = setConfigInContext(ctx, newCfg)
 
 	// When:

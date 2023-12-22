@@ -1,4 +1,4 @@
 docker-compose*
 apps/**/*_gen.go
 apps/**/mock_*.go
-apps/**/test_*.go
+apps/**/*_test.go
