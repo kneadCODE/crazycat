@@ -20,7 +20,7 @@ jobs:
         language: [ 'go', 'javascript' ] # Ref - https://aka.ms/codeql-docs/language-support
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
