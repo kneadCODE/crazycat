@@ -48,7 +48,7 @@ func Init() (context.Context, func(), error) {
 		ctx = setNewRelicInContext(ctx, nrApp)
 	}
 
-	otelShutdown, err := initOTELF(cfg, sentryHub != nil)
+	otelShutdown, err := initOTELF(ctx, cfg, sentryHub != nil)
 	if err != nil {
 		return nil, nil, err
 	}

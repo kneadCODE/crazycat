@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"runtime"
 	"strconv"
 
 	sentryotel "github.com/getsentry/sentry-go/otel"
@@ -31,7 +30,7 @@ const (
 )
 
 // InitOTEL initializes OTEL providers at global level
-func InitOTEL(cfg config.Config, isSentryEnabled bool) (shutdown func(context.Context) error, err error) {
+func InitOTEL(ctx context.Context, cfg config.Config, isSentryEnabled bool) (shutdown func(context.Context) error, err error) {
 	var shutdownFuncs []func(context.Context) error
 	shutdown = func(ctx context.Context) error {
 		var err error
@@ -41,7 +40,7 @@ func InitOTEL(cfg config.Config, isSentryEnabled bool) (shutdown func(context.Co
 		return err
 	}
 
-	res, err := newOTELResource(cfg)
+	res, err := newOTELResource(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +69,7 @@ func InitOTEL(cfg config.Config, isSentryEnabled bool) (shutdown func(context.Co
 }
 
 // TODO: Add comprehensive tests for the resource creation
-func newOTELResource(cfg config.Config) (*resource.Resource, error) {
+func newOTELResource(ctx context.Context, cfg config.Config) (*resource.Resource, error) {
 	attrs := []attribute.KeyValue{
 		semconv.ServiceName(cfg.Name),
 		semconv.ServiceNamespace(cfg.Project),
@@ -78,10 +77,7 @@ func newOTELResource(cfg config.Config) (*resource.Resource, error) {
 		semconv.ServiceInstanceID(cfg.ServerInstanceID),
 		semconv.DeploymentEnvironment(cfg.Env.String()),
 
-		semconv.OSTypeKey.String(runtime.GOOS),
-
 		semconv.ContainerName(os.Getenv(string(semconv.ContainerNameKey))),
-		semconv.ContainerID(os.Getenv(string(semconv.ContainerIDKey))),
 		semconv.ContainerImageName(os.Getenv(string(semconv.ContainerImageNameKey))),
 		semconv.ContainerImageTag(os.Getenv(string(semconv.ContainerImageTagKey))),
 		semconv.ContainerRuntime(os.Getenv(string(semconv.ContainerRuntimeKey))),
@@ -114,21 +110,28 @@ func newOTELResource(cfg config.Config) (*resource.Resource, error) {
 		attrs = append(attrs, semconv.K8SCronJobName(v))
 	}
 
-	res, err := resource.Merge(resource.Default(), resource.NewWithAttributes(
-		semconv.SchemaURL,
-		attrs...,
-	))
+	resAuto, err := resource.New(
+		ctx,
+		resource.WithProcess(),
+		resource.WithOS(),
+		resource.WithContainer(),
+		resource.WithHost(),
+		resource.WithTelemetrySDK(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("err creating OTEL resource: %w", err)
+	}
+
+	res, err := resource.Merge(resAuto, resource.NewWithAttributes(semconv.SchemaURL, attrs...))
 	if err != nil {
 		return nil, fmt.Errorf("err merging OTEL resource: %w", err)
 	}
+
 	return res, nil
 }
 
 func newOTELPropagator(isSentryEnabled bool) propagation.TextMapPropagator {
-	p := []propagation.TextMapPropagator{
-		propagation.TraceContext{},
-		propagation.Baggage{},
-	}
+	p := []propagation.TextMapPropagator{propagation.TraceContext{}, propagation.Baggage{}}
 
 	if isSentryEnabled {
 		p = append(p, sentryotel.NewSentryPropagator())
@@ -144,10 +147,7 @@ func newTraceProvider(res *resource.Resource, isSentryEnabled bool) (*trace.Trac
 		return nil, err
 	}
 
-	tp := trace.NewTracerProvider(
-		trace.WithResource(res),
-		trace.WithBatcher(traceExporter),
-	)
+	tp := trace.NewTracerProvider(trace.WithResource(res), trace.WithBatcher(traceExporter))
 
 	if isSentryEnabled {
 		tp.RegisterSpanProcessor(sentryotel.NewSentrySpanProcessor())

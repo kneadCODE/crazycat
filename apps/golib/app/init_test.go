@@ -229,7 +229,7 @@ func TestInit(t *testing.T) {
 				require.Equal(t, tc.givenConfig, cfg)
 				return tc.givenNR, tc.givenNRErr
 			}
-			initOTELF = func(cfg config.Config, isSentryEnabled bool) (func(context.Context) error, error) {
+			initOTELF = func(ctx context.Context, cfg config.Config, isSentryEnabled bool) (func(context.Context) error, error) {
 				require.Equal(t, tc.givenConfig, cfg)
 				// TODO: Validate isSentryEnabled's impact somehow
 				return tc.givenOTELShutdownF, tc.givenOTELTracerErr
