@@ -12,7 +12,7 @@ package app2
 // 	require.EqualValues(t, config.Config{}, cfg)
 //
 // 	// When:
-// 	newCfg := config.Config{Name: "something"}
+// 	newCfg := config.Config{Name: "recordCommon"}
 // 	ctx = context.WithValue(ctx, configCtxKey, newCfg)
 //
 // 	// When:
@@ -33,7 +33,7 @@ package app2
 // 	require.EqualValues(t, config.Config{}, cfg)
 //
 // 	// When:
-// 	newCfg := config.Config{Name: "something"}
+// 	newCfg := config.Config{Name: "recordCommon"}
 // 	ctx = setConfigInContext(ctx, newCfg)
 //
 // 	// When:

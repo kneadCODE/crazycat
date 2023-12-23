@@ -6,6 +6,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -22,16 +23,15 @@ func NewZap(debugMode bool, res *resource.Resource) (*zap.Logger, error) {
 			EncoderConfig: zapcore.EncoderConfig{
 				TimeKey:        "T",
 				LevelKey:       "S",
-				NameKey:        "N",
-				CallerKey:      "C",
-				FunctionKey:    "F",
+				NameKey:        zapcore.OmitKey,
+				CallerKey:      zapcore.OmitKey,
+				FunctionKey:    zapcore.OmitKey,
 				MessageKey:     "B",
-				StacktraceKey:  "S",
+				StacktraceKey:  zapcore.OmitKey,
 				LineEnding:     zapcore.DefaultLineEnding,
 				EncodeLevel:    zapcore.CapitalColorLevelEncoder,
 				EncodeTime:     zapcore.ISO8601TimeEncoder,
 				EncodeDuration: zapcore.StringDurationEncoder,
-				EncodeCaller:   zapcore.ShortCallerEncoder,
 			},
 			OutputPaths:      []string{"stdout"},
 			ErrorOutputPaths: []string{"stderr"},
@@ -93,4 +93,18 @@ type resourceZapWrapper struct {
 
 func (r resourceZapWrapper) MarshalLogObject(z zapcore.ObjectEncoder) error {
 	return attributesZapWrapper(r.Attributes()).MarshalLogObject(z)
+}
+
+func ZapLogEnriched(z *zap.Logger, level zapcore.Level, msg string, span trace.Span, attrs ...attribute.KeyValue) {
+	// Ref: OTEL logging fields https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-resource
+	z.Log(
+		level,
+		msg,
+		zap.String("TraceId", span.SpanContext().TraceID().String()),
+		zap.String("SpanId", span.SpanContext().SpanID().String()),
+		zap.String("TraceFlags", span.SpanContext().TraceFlags().String()),
+		zap.Object("Attributes", attributesZapWrapper(attrs)),
+		// We are unable to get span's attrs and merge it with the given attrs because the span attrs are not exposed.
+		// Hence, wherever the span is created or span.SetAttribute is called, we need to set it in zap itself.
+	)
 }
