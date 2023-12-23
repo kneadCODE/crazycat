@@ -11,10 +11,11 @@ import (
 	"go.opentelemetry.io/otel"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	_ "go.uber.org/automaxprocs"
 	"go.uber.org/zap"
 )
 
-// Init initalizes the app and returns
+// Init initializes the app and returns
 func Init() (ctx context.Context, shutdown func(), err error) {
 	ctx = context.Background()
 	basicLogger := log.New(os.Stdout, "", log.LstdFlags)
