@@ -41,7 +41,9 @@ func RecordError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 
 func recordCommon(ctx context.Context, level zapcore.Level, msg string, attrs []attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
-	span.AddEvent(msg, trace.WithAttributes(attrs...))
+	if level != zapcore.DebugLevel {
+		span.AddEvent(msg, trace.WithAttributes(attrs...))
+	}
 
 	zapL := zapFromContext(ctx)
 	if zapL == nil {

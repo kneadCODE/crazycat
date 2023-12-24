@@ -1,13 +1,15 @@
 package internal
 
 import (
+	"fmt"
+
 	sentryotel "github.com/getsentry/sentry-go/otel"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
-	"go.opentelemetry.io/otel/sdk/metric"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
@@ -30,11 +32,11 @@ func NewOTELPropagator(isSentryEnabled bool) propagation.TextMapPropagator {
 	return propagation.NewCompositeTextMapPropagator(p...)
 }
 
-func NewTraceProvider(res *resource.Resource, isSentryEnabled bool) (*sdktrace.TracerProvider, error) {
+func NewOTELTraceProvider(res *resource.Resource, isSentryEnabled bool) (*sdktrace.TracerProvider, error) {
 	// TODO: Implement the correct trace exporter
 	traceExporter, err := stdouttrace.New()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("traceExporter err: %w", err)
 	}
 
 	tp := sdktrace.NewTracerProvider(sdktrace.WithResource(res), sdktrace.WithBatcher(traceExporter))
@@ -46,17 +48,17 @@ func NewTraceProvider(res *resource.Resource, isSentryEnabled bool) (*sdktrace.T
 	return tp, nil
 }
 
-func NewMeterProvider(res *resource.Resource) (*metric.MeterProvider, error) {
+func NewOTELMeterProvider(res *resource.Resource) (*sdkmetric.MeterProvider, error) {
 	// TODO: Implement the correct metric exporter
 	metricExporter, err := stdoutmetric.New()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("metricExporter err: %w", err)
 	}
 
 	// TODO: Figure out how to silence the initial metrics logging
-	meterProvider := metric.NewMeterProvider(
-		metric.WithResource(res),
-		metric.WithReader(metric.NewPeriodicReader(metricExporter)),
+	meterProvider := sdkmetric.NewMeterProvider(
+		sdkmetric.WithResource(res),
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter)),
 	)
 
 	return meterProvider, nil

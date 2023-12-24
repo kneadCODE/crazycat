@@ -37,8 +37,7 @@ func (k contextKey) String() string { return "app context value " + k.name }
 var (
 	configCtxKey    = contextKey{"app-config"}
 	zapCtxKey       = contextKey{"app-zap"}
-	otelAttrsCtxKey = contextKey{"otel-attrs"}
-	// otelTracerCtxKey = contextKey{"app-otel-tracer"}
+	otelAttrsCtxKey = contextKey{"app-otel-attrs"}
 	// newrelicCtxKey   = contextKey{"app_newrelic"}
 )
 

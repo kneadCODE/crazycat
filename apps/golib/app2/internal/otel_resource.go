@@ -63,7 +63,7 @@ func loadServiceResourceFromEnv() ([]attribute.KeyValue, error) {
 		// OTEL considers this optional, but we will consider it mandatory to avoid mistakes
 		return nil, errors.New("otel:svc version not provided")
 	} else {
-		attrs = append(attrs, semconv.ServiceNamespace(v))
+		attrs = append(attrs, semconv.ServiceVersion(v))
 	}
 
 	return attrs, nil

@@ -2,7 +2,6 @@ package internal
 
 import (
 	"runtime"
-	"runtime/debug"
 
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
@@ -11,16 +10,16 @@ import (
 // GetOTELErrorAttrs gets error related OTEL attributes
 func GetOTELErrorAttrs(callSkipLevels int) []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
-		semconv.ExceptionStacktrace(string(debug.Stack())),
+		semconv.ExceptionStacktrace(string(stackTraceStub())),
 	}
 
 	if fn, file, line, ok := runtimeCaller(callSkipLevels + 1); ok {
 		if fn != "" {
-			attrs = append(attrs, semconv.CodeFunctionKey.String(fn))
+			attrs = append(attrs, semconv.CodeFunction(fn))
 		}
 		if file != "" {
-			attrs = append(attrs, semconv.CodeFilepathKey.String(file))
-			attrs = append(attrs, semconv.CodeLineNumberKey.Int(line))
+			attrs = append(attrs, semconv.CodeFilepath(file))
+			attrs = append(attrs, semconv.CodeLineNumber(line))
 		}
 	}
 

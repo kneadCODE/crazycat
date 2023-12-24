@@ -7,8 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kneadCODE/crazycat/apps/golib/app2/internal"
-	"go.opentelemetry.io/otel"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	_ "go.uber.org/automaxprocs"
@@ -27,30 +25,30 @@ func Init() (ctx context.Context, shutdown func(), err error) {
 	if err != nil {
 		return
 	}
-	otel.SetTextMapPropagator(internal.NewOTELPropagator(false)) // TODO: Deal with the bool
+	setOTELTextMapPropagatorStub(newOTELPropagatorStub(false)) // TODO: Deal with the bool
 	basicLogger.Println("Config initialized")
 
 	basicLogger.Println("Initializing Zap...")
-	zapLogger, err := internal.NewZap(cfg.Env == EnvDev, cfg.res)
+	zapLogger, err := newZapStub(cfg.Env == EnvDev, cfg.res)
 	if err != nil {
 		return
 	}
 	zapLogger.Info("Zap initialized")
 
 	zapLogger.Info("Initializing OTEL Trace provider...")
-	otelTraceP, err := internal.NewTraceProvider(cfg.res, false) // TODO: Deal with the bool
+	otelTraceP, err := newOTELTraceProviderStub(cfg.res, false) // TODO: Deal with the bool
 	if err != nil {
 		return
 	}
-	otel.SetTracerProvider(otelTraceP)
+	setOTELTracerProviderStub(otelTraceP)
 	zapLogger.Info("OTEL Trace provider initialized")
 
 	zapLogger.Info("Initializing OTEL Meter provider...")
-	otelMeterP, err := internal.NewMeterProvider(cfg.res)
+	otelMeterP, err := newOTELMeterProviderStub(cfg.res)
 	if err != nil {
 		return
 	}
-	otel.SetMeterProvider(otelMeterP)
+	setOTELMeterProviderStub(otelMeterP)
 	zapLogger.Info("OTEL Meter provider initialized")
 
 	ctx = setConfigInContext(ctx, cfg)
