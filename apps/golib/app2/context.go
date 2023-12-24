@@ -3,6 +3,7 @@ package app2
 import (
 	"context"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
 
@@ -23,8 +24,9 @@ type contextKey struct {
 func (k contextKey) String() string { return "app context value " + k.name }
 
 var (
-	configCtxKey = contextKey{"app-config"}
-	zapCtxKey    = contextKey{"app-zap"}
+	configCtxKey    = contextKey{"app-config"}
+	zapCtxKey       = contextKey{"app-zap"}
+	otelAttrsCtxKey = contextKey{"otel-attrs"}
 	// otelTracerCtxKey = contextKey{"app-otel-tracer"}
 	// newrelicCtxKey   = contextKey{"app_newrelic"}
 )
@@ -38,8 +40,19 @@ func setZapInContext(ctx context.Context, l *zap.Logger) context.Context {
 }
 
 func zapFromContext(ctx context.Context) *zap.Logger {
-	if l, ok := ctx.Value(zapCtxKey).(*zap.Logger); ok {
-		return l
+	if v, ok := ctx.Value(zapCtxKey).(*zap.Logger); ok {
+		return v
+	}
+	return nil
+}
+
+func setOTELAttrsInContext(ctx context.Context, attrs []attribute.KeyValue) context.Context {
+	return context.WithValue(ctx, otelAttrsCtxKey, attrs)
+}
+
+func otelAttrsFromContext(ctx context.Context) []attribute.KeyValue {
+	if v, ok := ctx.Value(otelAttrsCtxKey).([]attribute.KeyValue); ok {
+		return v
 	}
 	return nil
 }

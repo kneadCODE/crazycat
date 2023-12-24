@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -56,8 +57,12 @@ func NewZap(debugMode bool, res *resource.Resource) (*zap.Logger, error) {
 			},
 			OutputPaths:      []string{"stdout"},
 			ErrorOutputPaths: []string{"stderr"},
-		}.Build(zap.Fields(zap.Object("Resource", resourceZapWrapper{res})))
+		}.Build(zap.Fields(
+			zap.Object("Resource", resourceZapWrapper{res}),
+			zap.Object("Instrumentation", instrumentationScopeZapWrapper(otelInstrumentationScope)),
+		))
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("golib:app:NewZap err initializing zap: %w", err)
 	}
@@ -95,7 +100,15 @@ func (r resourceZapWrapper) MarshalLogObject(z zapcore.ObjectEncoder) error {
 	return attributesZapWrapper(r.Attributes()).MarshalLogObject(z)
 }
 
-func ZapLogEnriched(z *zap.Logger, level zapcore.Level, msg string, span trace.Span, attrs ...attribute.KeyValue) {
+type instrumentationScopeZapWrapper instrumentation.Scope
+
+func (r instrumentationScopeZapWrapper) MarshalLogObject(z zapcore.ObjectEncoder) error {
+	z.AddString("Name", r.Name)
+	z.AddString("Version", r.Version)
+	return nil
+}
+
+func ZapLogEnriched(z *zap.Logger, level zapcore.Level, msg string, span trace.Span, attrs []attribute.KeyValue) {
 	// Ref: OTEL logging fields https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-resource
 	z.Log(
 		level,

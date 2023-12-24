@@ -42,6 +42,7 @@ func Init() (ctx context.Context, shutdown func(), err error) {
 	if err != nil {
 		return
 	}
+	otel.SetTracerProvider(otelTraceP)
 	zapLogger.Info("OTEL Trace provider initialized")
 
 	zapLogger.Info("Initializing OTEL Meter provider...")
@@ -49,6 +50,7 @@ func Init() (ctx context.Context, shutdown func(), err error) {
 	if err != nil {
 		return
 	}
+	otel.SetMeterProvider(otelMeterP)
 	zapLogger.Info("OTEL Meter provider initialized")
 
 	ctx = setConfigInContext(ctx, cfg)
