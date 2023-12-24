@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/pprof"
-	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kneadCODE/crazycat/apps/golib/app"
+	"github.com/kneadCODE/crazycat/apps/golib/app/otelhttpserver"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -71,31 +71,26 @@ func rootMiddleware(next http.Handler) http.Handler {
 
 		defer panicHandler(ctx)
 
-		// TODO: Figure out why app pkg does not have a way to put fields in context
-		// logger = logger.With(
-		// 	slog.String("http.req.method", r.Method),
-		// 	slog.String("http.req.path", r.URL.Path),
-		// 	slog.String("http.req.host", r.URL.Host),
-		// 	slog.String("http.req.user-agent", r.UserAgent()),
-		// 	slog.String("http.req.referer", r.Referer()),
-		// 	slog.String("http.req.remote_addr", r.RemoteAddr),
-		// )
+		ctx, end := otelhttpserver.StartSpan(r)
+		defer end(nil) // TODO: See if internal server err should be marking the span as err or not
+
+		bw := &otelhttpserver.OTELRequestBodyWrapper{ReadCloser: r.Body, Ctx: ctx}
+		r.Body = bw
+		rw := &otelhttpserver.OTELResponseWrapper{ResponseWriter: w, Ctx: ctx}
+
+		r = r.WithContext(ctx)
 
 		app.RecordInfoEvent(ctx, "START HTTP Request",
-			attribute.String("http.req.content-type", r.Header.Get("Content-Type")),
-			attribute.String("http.req.proto", r.Proto),
 			attribute.String("http.req.start", reqStart.Format(time.RFC3339)),
 		)
 
-		writer := &respWriter{ResponseWriter: w}
+		next.ServeHTTP(rw, r)
 
-		next.ServeHTTP(writer, r)
+		otelhttpserver.PostHandle(ctx, rw, bw)
 
 		reqEnd := time.Now()
 		app.RecordInfoEvent(ctx, "END HTTP Request",
-			attribute.String("http.resp.status", strconv.Itoa(writer.statusCode)),
 			attribute.String("http.resp.total-duration", fmt.Sprintf("%dms", time.Since(reqEnd).Milliseconds())),
-			attribute.String("http.resp.content-length", writer.Header().Get("Content-Length")),
 			attribute.String("http.resp.end", reqEnd.Format(time.RFC3339)),
 		)
 	})
@@ -107,18 +102,6 @@ func panicHandler(ctx context.Context) {
 		return
 	}
 
-	// TODO: Add additional log fields if necessary.
 	app.RecordError(ctx, fmt.Errorf(
 		"httpserver:middleware:RootMiddleware: PANIC: [%+v]", rcv))
-}
-
-type respWriter struct {
-	http.ResponseWriter
-
-	statusCode int
-}
-
-func (w *respWriter) WriteHeader(statusCode int) {
-	w.statusCode = statusCode
-	w.ResponseWriter.WriteHeader(statusCode)
 }

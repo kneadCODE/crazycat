@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kneadCODE/crazycat/apps/golib/app/internal"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	_ "go.uber.org/automaxprocs"
@@ -52,7 +53,7 @@ func Init() (ctx context.Context, shutdown func(), err error) {
 	zapLogger.Info("OTEL Meter provider initialized")
 
 	ctx = setConfigInContext(ctx, cfg)
-	ctx = setZapInContext(ctx, zapLogger)
+	ctx = internal.SetZapInContext(ctx, zapLogger)
 	shutdown = shutdownFunc(zapLogger, otelTraceP, otelMeterP)
 
 	zapLogger.Info("App initialization complete")

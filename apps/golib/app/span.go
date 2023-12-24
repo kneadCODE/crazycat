@@ -21,7 +21,7 @@ func StartSpan(
 ) (newCtx context.Context, end func(error)) {
 
 	if async {
-		newCtx = setZapInContext(context.Background(), zapFromContext(ctx).With())
+		newCtx = internal.SetZapInContext(context.Background(), internal.ZapFromContext(ctx).With())
 		newCtx = trace.ContextWithSpan(newCtx, trace.SpanFromContext(ctx))
 	} else {
 		newCtx = ctx
@@ -29,7 +29,7 @@ func StartSpan(
 
 	newCtx, span := internal.GetTracer().Start(newCtx, name, trace.WithAttributes(attrs...)) // TODO: Fill options
 
-	newCtx = setOTELAttrsInContext(newCtx, attrs)
+	newCtx = internal.SetOTELAttrsInContext(newCtx, attrs)
 
 	return newCtx, func(err error) {
 		if err != nil {
