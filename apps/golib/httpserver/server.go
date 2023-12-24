@@ -48,7 +48,7 @@ func (s *Server) Start(ctx context.Context) error {
 	startErrChan := make(chan error, 1)
 
 	go func() {
-		app.TrackInfoEvent(ctx, fmt.Sprintf("Starting HTTP server on %s", s.srv.Addr))
+		app.RecordInfoEvent(ctx, fmt.Sprintf("Starting HTTP server on %s", s.srv.Addr))
 		startErrChan <- s.srv.ListenAndServe()
 	}()
 
@@ -69,18 +69,18 @@ func (s *Server) stop(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.gracefulShutdownTimeout) // Cannot rely on root context as that might have been cancelled.
 	defer cancel()
 
-	app.TrackInfoEvent(ctx, "Attempting HTTP server graceful shutdown")
+	app.RecordInfoEvent(ctx, "Attempting HTTP server graceful shutdown")
 	if err := s.srv.Shutdown(ctx); err != nil {
-		app.TrackErrorEvent(ctx, fmt.Errorf("httpserver:Server: graceful shutdown failed: %w", err))
+		app.RecordError(ctx, fmt.Errorf("httpserver:Server: graceful shutdown failed: %w", err))
 
-		app.TrackInfoEvent(ctx, "Attempting HTTP server force shutdown")
+		app.RecordInfoEvent(ctx, "Attempting HTTP server force shutdown")
 		if err = s.srv.Close(); err != nil {
-			app.TrackErrorEvent(ctx, fmt.Errorf("httpserver:Server: force shutdown failed: %w", err))
+			app.RecordError(ctx, fmt.Errorf("httpserver:Server: force shutdown failed: %w", err))
 			return err
 		}
 	}
 
-	app.TrackInfoEvent(ctx, "HTTP server shutdown complete")
+	app.RecordInfoEvent(ctx, "HTTP server shutdown complete")
 
 	return nil
 }

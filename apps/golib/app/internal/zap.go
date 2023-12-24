@@ -2,75 +2,122 @@ package internal
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/kneadCODE/crazycat/apps/golib/app/config"
-	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/sdk/instrumentation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-func NewZap(cfg config.Config) (*zap.SugaredLogger, error) {
-	var zapCfg zap.Config
+func NewZap(debugMode bool, res *resource.Resource) (*zap.Logger, error) {
+	var l *zap.Logger
+	var err error
 
-	switch cfg.Env {
-	case config.EnvDev:
-		zapCfg = zap.Config{
+	if debugMode {
+		l, err = zap.Config{
 			Level: zap.NewAtomicLevelAt(zapcore.DebugLevel),
 			// Development: true,
 			Encoding: "console",
 			EncoderConfig: zapcore.EncoderConfig{
-				TimeKey:  "T",
-				LevelKey: "S",
-				NameKey:  "N",
-				// CallerKey:      "C",
-				FunctionKey: zapcore.OmitKey,
-				MessageKey:  "B",
-				// StacktraceKey:  "S",
+				TimeKey:        "T",
+				LevelKey:       "S",
+				NameKey:        zapcore.OmitKey,
+				CallerKey:      zapcore.OmitKey,
+				FunctionKey:    zapcore.OmitKey,
+				MessageKey:     "B",
+				StacktraceKey:  zapcore.OmitKey,
 				LineEnding:     zapcore.DefaultLineEnding,
 				EncodeLevel:    zapcore.CapitalColorLevelEncoder,
 				EncodeTime:     zapcore.ISO8601TimeEncoder,
 				EncodeDuration: zapcore.StringDurationEncoder,
-				EncodeCaller:   zapcore.ShortCallerEncoder,
 			},
 			OutputPaths:      []string{"stdout"},
 			ErrorOutputPaths: []string{"stderr"},
-		}
-	default:
-		zapCfg = zap.Config{
+		}.Build()
+	} else {
+		l, err = zap.Config{
 			Level:       zap.NewAtomicLevelAt(zapcore.InfoLevel),
 			Development: false,
 			Encoding:    "json",
 			EncoderConfig: zapcore.EncoderConfig{
-				TimeKey:  "ts",
-				LevelKey: "severity",
-				NameKey:  "logger",
-				// CallerKey:      "caller",
-				FunctionKey: zapcore.OmitKey,
-				MessageKey:  "body",
-				// StacktraceKey:  "stacktrace",
+				TimeKey:        "Timestamp",     // OTEL compliant
+				LevelKey:       "Severity",      // OTEL compliant
+				NameKey:        zapcore.OmitKey, // OTEL compliant
+				CallerKey:      zapcore.OmitKey, // OTEL compliant
+				FunctionKey:    zapcore.OmitKey, // OTEL compliant
+				MessageKey:     "Body",          // OTEL compliant
+				StacktraceKey:  zapcore.OmitKey, // OTEL compliant
 				LineEnding:     zapcore.DefaultLineEnding,
-				EncodeLevel:    zapcore.LowercaseLevelEncoder,
-				EncodeTime:     zapcore.EpochTimeEncoder,
+				EncodeLevel:    zapcore.CapitalLevelEncoder, // OTEL compliant
+				EncodeTime:     zapcore.EpochTimeEncoder,    // OTEL compliant
 				EncodeDuration: zapcore.MillisDurationEncoder,
-				EncodeCaller:   zapcore.ShortCallerEncoder,
 			},
 			OutputPaths:      []string{"stdout"},
 			ErrorOutputPaths: []string{"stderr"},
+		}.Build(zap.Fields(
+			zap.Object("Resource", resourceZapWrapper{res}),
+			zap.Object("Instrumentation", instrumentationScopeZapWrapper(otelInstrumentationScope)),
+		))
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("golib:app:NewZap err initializing zap: %w", err)
+	}
+
+	return l, nil
+}
+
+type attributesZapWrapper []attribute.KeyValue
+
+func (attr attributesZapWrapper) MarshalLogObject(z zapcore.ObjectEncoder) error {
+	for _, a := range attr {
+		switch a.Value.Type() {
+		case attribute.INT64:
+			z.AddInt64(string(a.Key), a.Value.AsInt64())
+		case attribute.FLOAT64:
+			z.AddFloat64(string(a.Key), a.Value.AsFloat64())
+		case attribute.STRING:
+			z.AddString(string(a.Key), a.Value.AsString())
+		case attribute.BOOL:
+			z.AddString(string(a.Key), a.Value.AsString())
+		case attribute.STRINGSLICE:
+			z.AddString(string(a.Key), strings.Join(a.Value.AsStringSlice(), ","))
+		default:
+			// Intentionally skipping it as we are not expecting any other type
 		}
 	}
+	return nil
+}
 
-	l, err := zapCfg.Build(
-		zap.Fields(
-			zap.String(string(semconv.ServiceNameKey), cfg.Name),
-			zap.String(string(semconv.ServiceNamespaceKey), cfg.Project),
-			zap.String(string(semconv.ServiceVersionKey), cfg.Version),
-			zap.String(string(semconv.ServiceInstanceIDKey), cfg.ServerInstanceID),
-			zap.String(string(semconv.DeploymentEnvironmentKey), string(cfg.Env)),
-		),
+type resourceZapWrapper struct {
+	*resource.Resource
+}
+
+func (r resourceZapWrapper) MarshalLogObject(z zapcore.ObjectEncoder) error {
+	return attributesZapWrapper(r.Attributes()).MarshalLogObject(z)
+}
+
+type instrumentationScopeZapWrapper instrumentation.Scope
+
+func (r instrumentationScopeZapWrapper) MarshalLogObject(z zapcore.ObjectEncoder) error {
+	z.AddString("Name", r.Name)
+	z.AddString("Version", r.Version)
+	return nil
+}
+
+func ZapLogEnriched(z *zap.Logger, level zapcore.Level, msg string, span trace.Span, attrs []attribute.KeyValue) {
+	// Ref: OTEL logging fields https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-resource
+	z.Log(
+		level,
+		msg,
+		zap.String("TraceId", span.SpanContext().TraceID().String()),
+		zap.String("SpanId", span.SpanContext().SpanID().String()),
+		zap.String("TraceFlags", span.SpanContext().TraceFlags().String()),
+		zap.Object("Attributes", attributesZapWrapper(attrs)),
+		// We are unable to get span's attrs and merge it with the given attrs because the span attrs are not exposed.
+		// Hence, wherever the span is created or span.SetAttribute is called, we need to set it in zap itself.
 	)
-	if err != nil {
-		return nil, fmt.Errorf("err initializing zap: %w", err)
-	}
-
-	return l.Sugar(), nil
 }

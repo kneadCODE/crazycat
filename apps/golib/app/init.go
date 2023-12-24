@@ -1,59 +1,74 @@
-// Package app handles the application configuration and is responsible for orchestrating the
-// application along with handling all the Metrics, Events, Logs & Traces (MELT/Observability).
 package app
 
 import (
 	"context"
+	"log"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/getsentry/sentry-go"
-	"github.com/kneadCODE/crazycat/apps/golib/app/config"
-	"github.com/kneadCODE/crazycat/apps/golib/app/internal"
-	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	_ "go.uber.org/automaxprocs"
+	"go.uber.org/zap"
 )
 
-// Init initializes the application by setting up the logger, tracer and error reporter.
-func Init() (context.Context, func(), error) {
-	ctx := context.Background()
+// Init initializes the app and returns
+func Init() (ctx context.Context, shutdown func(), err error) {
+	ctx = context.Background()
+	basicLogger := log.New(os.Stdout, "", log.LstdFlags)
 
-	cfg, err := newConfigFromEnvF()
+	basicLogger.Println("Starting App initialization...")
+
+	basicLogger.Println("Initializing Config from env...")
+	cfg, err := newConfigFromEnv(ctx)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
+	setOTELTextMapPropagatorStub(newOTELPropagatorStub(false)) // TODO: Deal with the bool
+	basicLogger.Println("Config initialized")
+
+	basicLogger.Println("Initializing Zap...")
+	zapLogger, err := newZapStub(cfg.Env == EnvDev, cfg.res)
+	if err != nil {
+		return
+	}
+	zapLogger.Info("Zap initialized")
+
+	zapLogger.Info("Initializing OTEL Trace provider...")
+	otelTraceP, err := newOTELTraceProviderStub(cfg.res, false) // TODO: Deal with the bool
+	if err != nil {
+		return
+	}
+	setOTELTracerProviderStub(otelTraceP)
+	zapLogger.Info("OTEL Trace provider initialized")
+
+	zapLogger.Info("Initializing OTEL Meter provider...")
+	otelMeterP, err := newOTELMeterProviderStub(cfg.res)
+	if err != nil {
+		return
+	}
+	setOTELMeterProviderStub(otelMeterP)
+	zapLogger.Info("OTEL Meter provider initialized")
+
 	ctx = setConfigInContext(ctx, cfg)
+	ctx = setZapInContext(ctx, zapLogger)
+	shutdown = shutdownFunc(zapLogger, otelTraceP, otelMeterP)
 
-	// TODO: Add log line to inform that processing has started
+	zapLogger.Info("App initialization complete")
+	return
+}
 
-	logger, err := newZapF(cfg)
-	if err != nil {
-		return nil, nil, err
-	}
-	ctx = setZapInContext(ctx, logger)
+func shutdownFunc(
+	zapLogger *zap.Logger,
+	otelTraceP *sdktrace.TracerProvider,
+	otelMeterP *sdkmetric.MeterProvider,
+) func() {
+	return func() {
+		zapLogger.Info("Shutting down app...")
 
-	sentryHub, err := newSentryF(cfg)
-	if err != nil {
-		return nil, nil, err
-	}
-	if sentryHub != nil {
-		ctx = sentry.SetHubOnContext(ctx, sentryHub)
-	}
+		basicLogger := log.New(os.Stdout, "", log.LstdFlags)
 
-	nrApp, err := newNewRelicF(cfg)
-	if err != nil {
-		return nil, nil, err
-	}
-	if nrApp != nil {
-		ctx = setNewRelicInContext(ctx, nrApp)
-	}
-
-	otelShutdown, err := initOTELF(cfg, sentryHub != nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return ctx, func() {
 		cancelCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
@@ -62,58 +77,51 @@ func Init() (context.Context, func(), error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_ = logger.Sync() // Intentionally ignoring err because we can't do anything about it
+			basicLogger.Println("Shutting down zap...")
+			_ = zapLogger.Sync() // Intentionally ignoring err because we zap has a bug where it always returns err here
+			basicLogger.Println("Zap shutdown complete")
 		}()
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_ = otelShutdown(cancelCtx) // Intentionally ignoring err because we can't do anything about it
+			basicLogger.Println("Shutting down OTEL Trace provider...")
+			if err := otelTraceP.Shutdown(cancelCtx); err != nil {
+				basicLogger.Printf("OTEL Trace provider shutdown failed: %s", err.Error())
+			} else {
+				basicLogger.Println("OTEL Trace provider shutdown complete")
+			}
 		}()
 
-		if sentryHub != nil {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				_ = sentryHub.Flush(10 * time.Second)
-			}()
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			basicLogger.Println("Shutting down OTEL Meter provider...")
+			if err := otelMeterP.Shutdown(cancelCtx); err != nil {
+				basicLogger.Printf("OTEL Meter provider shutdown failed: %s", err.Error())
+			} else {
+				basicLogger.Println("OTEL Meter provider shutdown complete")
+			}
+		}()
 
-		if nrApp != nil {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				nrApp.Shutdown(10 * time.Second)
-			}()
-		}
+		// if sentryHub != nil {
+		// 	wg.Add(1)
+		// 	go func() {
+		// 		defer wg.Done()
+		// 		_ = sentryHub.Flush(10 * time.Second)
+		// 	}()
+		// }
+
+		// if nrApp != nil {
+		// 	wg.Add(1)
+		// 	go func() {
+		// 		defer wg.Done()
+		// 		nrApp.Shutdown(10 * time.Second)
+		// 	}()
+		// }
 
 		wg.Wait()
-	}, nil
-}
 
-// The following are for stubbing in tests
-var (
-	newZapF      = internal.NewZap
-	newSentryF   = internal.NewSentryHub
-	newNewRelicF = internal.NewNewRelicApp
-	initOTELF    = internal.InitOTEL
-)
-
-// newConfigFromEnv initalizes a new config from environment
-func newConfigFromEnv() (config.Config, error) {
-	cfg := config.Config{
-		Name:             os.Getenv(string(semconv.ServiceNameKey)),
-		Project:          os.Getenv(string(semconv.ServiceNamespaceKey)),
-		Env:              config.Environment(os.Getenv(string(semconv.DeploymentEnvironmentKey))),
-		Version:          os.Getenv(string(semconv.ServiceVersionKey)),
-		ServerInstanceID: os.Getenv(string(semconv.ServiceInstanceIDKey)),
+		basicLogger.Println("App shutdown complete")
 	}
-
-	if err := cfg.IsValid(); err != nil {
-		return config.Config{}, err
-	}
-
-	return cfg, nil
 }
-
-var newConfigFromEnvF = newConfigFromEnv
