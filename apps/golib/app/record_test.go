@@ -1,11 +1,11 @@
-package app2
+package app
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"github.com/kneadCODE/crazycat/apps/golib/app2/internal"
+	"github.com/kneadCODE/crazycat/apps/golib/app/internal"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"

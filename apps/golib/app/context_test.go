@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kneadCODE/crazycat/apps/golib/app/config"
-	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/stretchr/testify/require"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/zap"
 )
 
@@ -19,10 +19,10 @@ func TestConfigFromContext(t *testing.T) {
 	cfg := ConfigFromContext(ctx)
 
 	// Then:
-	require.EqualValues(t, config.Config{}, cfg)
+	require.EqualValues(t, Config{}, cfg)
 
 	// When:
-	newCfg := config.Config{Name: "something"}
+	newCfg := Config{Env: EnvDev}
 	ctx = context.WithValue(ctx, configCtxKey, newCfg)
 
 	// When:
@@ -30,6 +30,40 @@ func TestConfigFromContext(t *testing.T) {
 
 	// Then:
 	require.EqualValues(t, newCfg, cfg)
+}
+
+func TestContextWithAttributes(t *testing.T) {
+	// Given:
+	ctx := context.Background()
+	attrs := otelAttrsFromContext(ctx)
+	require.Nil(t, attrs)
+
+	newAttrs := []attribute.KeyValue{attribute.String("k1", "v1")}
+
+	// When:
+	ctx = ContextWithAttributes(ctx, newAttrs...)
+
+	// Then:
+	attrs = otelAttrsFromContext(ctx)
+	require.EqualValues(t, newAttrs, attrs)
+
+	// Given:
+	ctx, span := noop.NewTracerProvider().Tracer("test").Start(ctx, "span1", trace.WithAttributes(attribute.String("k2", "v2")))
+
+	// When:
+	ctx = ContextWithAttributes(ctx, attribute.String("k2", "v2"))
+
+	// Then:
+	attrs = otelAttrsFromContext(ctx)
+	require.EqualValues(t, append(newAttrs, attribute.String("k2", "v2")), attrs)
+	_ = span // TODO: figure out how to verify that attrs were set in the span
+}
+
+func TestContextKey_String(t *testing.T) {
+	require.Equal(t, "app context value app-config", configCtxKey.String())
+	require.Equal(t, "app context value app-zap", zapCtxKey.String())
+	require.Equal(t, "app context value app-otel-attrs", otelAttrsCtxKey.String())
+	require.Equal(t, "app context value abc", contextKey{"abc"}.String())
 }
 
 func Test_setConfigInContext(t *testing.T) {
@@ -40,10 +74,10 @@ func Test_setConfigInContext(t *testing.T) {
 	cfg := ConfigFromContext(ctx)
 
 	// Then:
-	require.EqualValues(t, config.Config{}, cfg)
+	require.EqualValues(t, Config{}, cfg)
 
 	// When:
-	newCfg := config.Config{Name: "something"}
+	newCfg := Config{Env: EnvDev}
 	ctx = setConfigInContext(ctx, newCfg)
 
 	// When:
@@ -61,7 +95,7 @@ func Test_zapFromContext(t *testing.T) {
 	require.Nil(t, l)
 
 	// When:
-	newL := zap.NewExample().Sugar()
+	newL := zap.NewExample()
 	ctx = context.WithValue(ctx, zapCtxKey, newL)
 
 	// When:
@@ -82,87 +116,48 @@ func Test_setZapInContext(t *testing.T) {
 	require.Nil(t, l)
 
 	// When:
-	newL := zap.NewExample().Sugar()
+	newL := zap.NewExample()
 	ctx = setZapInContext(ctx, newL)
 
 	// When:
 	require.EqualValues(t, newL, zapFromContext(ctx))
 }
 
-func Test_newRelicFromContext(t *testing.T) {
+func Test_otelAttrsFromContext(t *testing.T) {
 	// Given:
 	ctx := context.Background()
 
 	// When:
-	nrApp := newRelicFromContext(ctx)
+	attrs := otelAttrsFromContext(ctx)
 
 	// Then:
-	require.Nil(t, nrApp)
+	require.Nil(t, attrs)
 
 	// When:
-	newNRApp := &newrelic.Application{}
-	ctx = context.WithValue(ctx, newrelicCtxKey, newNRApp)
+	newAttrs := []attribute.KeyValue{attribute.String("k1", "v1")}
+	ctx = context.WithValue(ctx, otelAttrsCtxKey, newAttrs)
 
 	// When:
-	nrApp = newRelicFromContext(ctx)
+	attrs = otelAttrsFromContext(ctx)
 
 	// Then:
-	require.EqualValues(t, newNRApp, nrApp)
+	require.EqualValues(t, newAttrs, attrs)
 }
 
-func Test_setNewRelicInContext(t *testing.T) {
+func Test_setOTELAttrsInContext(t *testing.T) {
 	// Given:
 	ctx := context.Background()
 
 	// When:
-	nrApp := newRelicFromContext(ctx)
+	attrs := otelAttrsFromContext(ctx)
 
 	// Then:
-	require.Nil(t, nrApp)
+	require.Nil(t, attrs)
 
 	// When:
-	newNRApp := &newrelic.Application{}
-	ctx = setNewRelicInContext(ctx, newNRApp)
+	newAttrs := []attribute.KeyValue{attribute.String("k1", "v1")}
+	ctx = setOTELAttrsInContext(ctx, newAttrs)
 
 	// When:
-	require.EqualValues(t, newNRApp, newRelicFromContext(ctx))
-}
-
-func Test_otelTracerFromContext(t *testing.T) {
-	// Given:
-	ctx := context.Background()
-
-	// When:
-	tracer := otelTracerFromContext(ctx)
-
-	// Then:
-	require.Nil(t, tracer)
-
-	// When:
-	newTracer := sdktrace.NewTracerProvider().Tracer("testing")
-	ctx = context.WithValue(ctx, otelTracerCtxKey, newTracer)
-
-	// When:
-	tracer = otelTracerFromContext(ctx)
-
-	// Then:
-	require.EqualValues(t, newTracer, tracer)
-}
-
-func Test_setOTELTracerInContext(t *testing.T) {
-	// Given:
-	ctx := context.Background()
-
-	// When:
-	tracer := otelTracerFromContext(ctx)
-
-	// Then:
-	require.Nil(t, tracer)
-
-	// When:
-	newTracer := sdktrace.NewTracerProvider().Tracer("testing")
-	ctx = setOTELTracerInContext(ctx, newTracer)
-
-	// When:
-	require.EqualValues(t, newTracer, otelTracerFromContext(ctx))
+	require.EqualValues(t, newAttrs, otelAttrsFromContext(ctx))
 }

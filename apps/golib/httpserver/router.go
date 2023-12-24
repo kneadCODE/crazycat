@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kneadCODE/crazycat/apps/golib/app2"
+	"github.com/kneadCODE/crazycat/apps/golib/app"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -81,7 +81,7 @@ func rootMiddleware(next http.Handler) http.Handler {
 		// 	slog.String("http.req.remote_addr", r.RemoteAddr),
 		// )
 
-		app2.RecordInfoEvent(ctx, "START HTTP Request",
+		app.RecordInfoEvent(ctx, "START HTTP Request",
 			attribute.String("http.req.content-type", r.Header.Get("Content-Type")),
 			attribute.String("http.req.proto", r.Proto),
 			attribute.String("http.req.start", reqStart.Format(time.RFC3339)),
@@ -92,7 +92,7 @@ func rootMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(writer, r)
 
 		reqEnd := time.Now()
-		app2.RecordInfoEvent(ctx, "END HTTP Request",
+		app.RecordInfoEvent(ctx, "END HTTP Request",
 			attribute.String("http.resp.status", strconv.Itoa(writer.statusCode)),
 			attribute.String("http.resp.total-duration", fmt.Sprintf("%dms", time.Since(reqEnd).Milliseconds())),
 			attribute.String("http.resp.content-length", writer.Header().Get("Content-Length")),
@@ -108,7 +108,7 @@ func panicHandler(ctx context.Context) {
 	}
 
 	// TODO: Add additional log fields if necessary.
-	app2.RecordError(ctx, fmt.Errorf(
+	app.RecordError(ctx, fmt.Errorf(
 		"httpserver:middleware:RootMiddleware: PANIC: [%+v]", rcv))
 }
 

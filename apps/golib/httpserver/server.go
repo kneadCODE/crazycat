@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kneadCODE/crazycat/apps/golib/app2"
+	"github.com/kneadCODE/crazycat/apps/golib/app"
 )
 
 // New returns a new instance of Server.
@@ -48,7 +48,7 @@ func (s *Server) Start(ctx context.Context) error {
 	startErrChan := make(chan error, 1)
 
 	go func() {
-		app2.RecordInfoEvent(ctx, fmt.Sprintf("Starting HTTP server on %s", s.srv.Addr))
+		app.RecordInfoEvent(ctx, fmt.Sprintf("Starting HTTP server on %s", s.srv.Addr))
 		startErrChan <- s.srv.ListenAndServe()
 	}()
 
@@ -69,18 +69,18 @@ func (s *Server) stop(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.gracefulShutdownTimeout) // Cannot rely on root context as that might have been cancelled.
 	defer cancel()
 
-	app2.RecordInfoEvent(ctx, "Attempting HTTP server graceful shutdown")
+	app.RecordInfoEvent(ctx, "Attempting HTTP server graceful shutdown")
 	if err := s.srv.Shutdown(ctx); err != nil {
-		app2.RecordError(ctx, fmt.Errorf("httpserver:Server: graceful shutdown failed: %w", err))
+		app.RecordError(ctx, fmt.Errorf("httpserver:Server: graceful shutdown failed: %w", err))
 
-		app2.RecordInfoEvent(ctx, "Attempting HTTP server force shutdown")
+		app.RecordInfoEvent(ctx, "Attempting HTTP server force shutdown")
 		if err = s.srv.Close(); err != nil {
-			app2.RecordError(ctx, fmt.Errorf("httpserver:Server: force shutdown failed: %w", err))
+			app.RecordError(ctx, fmt.Errorf("httpserver:Server: force shutdown failed: %w", err))
 			return err
 		}
 	}
 
-	app2.RecordInfoEvent(ctx, "HTTP server shutdown complete")
+	app.RecordInfoEvent(ctx, "HTTP server shutdown complete")
 
 	return nil
 }

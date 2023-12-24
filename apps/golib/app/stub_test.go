@@ -1,7 +1,7 @@
-package app2
+package app
 
 import (
-	"github.com/kneadCODE/crazycat/apps/golib/app2/internal"
+	"github.com/kneadCODE/crazycat/apps/golib/app/internal"
 	"go.opentelemetry.io/otel"
 )
 

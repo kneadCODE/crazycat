@@ -35,7 +35,7 @@ func TestGetOTELErrorAttrs(t *testing.T) {
 
 	require.Equal(t, []attribute.KeyValue{
 		semconv.ExceptionStacktrace("stack_trace"),
-		semconv.CodeFunction("github.com/kneadCODE/crazycat/apps/golib/app2/internal.GetOTELErrorAttrs"),
+		semconv.CodeFunction("github.com/kneadCODE/crazycat/apps/golib/app/internal.GetOTELErrorAttrs"),
 		semconv.CodeFilepath(fmt.Sprintf("%s/debug.go", dir)),
 		semconv.CodeLineNumber(16),
 	}, attrs)

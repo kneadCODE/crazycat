@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/kneadCODE/crazycat/apps/golib/app2"
+	"github.com/kneadCODE/crazycat/apps/golib/app"
 )
 
 // ReadJSON reads the http.Request body and attempts to parse it into the desired type v. If read fails or parsing
@@ -41,20 +41,20 @@ func WriteJSON(ctx context.Context, w http.ResponseWriter, v interface{}, header
 
 	vBytes, err := json.Marshal(v) // Need to do this way instead of Encode because we need to log it
 	if err != nil {
-		app2.RecordError(ctx, fmt.Errorf("httpserver:WriteJSON: %w", err)) // TODO: Add any additional fields if needed.
+		app.RecordError(ctx, fmt.Errorf("httpserver:WriteJSON: %w", err)) // TODO: Add any additional fields if needed.
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Length", strconv.Itoa(len(vBytes))) // TODO: Check if this causes problems or not.
 
 	// TODO: Log any additional fields if needed.
-	app2.RecordInfoEvent(ctx, fmt.Sprintf(`Writing JSON Body: 
+	app.RecordInfoEvent(ctx, fmt.Sprintf(`Writing JSON Body: 
 		BODY: [%s],
 		HEADERS: [%v]
 		`, vBytes, w.Header()),
 	)
 
 	if _, err = w.Write(vBytes); err != nil {
-		app2.RecordError(ctx, fmt.Errorf("httpserver:WriteJSON: %w", err)) // TODO: Add any additional fields if needed.
+		app.RecordError(ctx, fmt.Errorf("httpserver:WriteJSON: %w", err)) // TODO: Add any additional fields if needed.
 	}
 }
