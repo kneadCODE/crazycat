@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kneadCODE/crazycat/apps/golib/app"
+	"github.com/kneadCODE/crazycat/apps/golib/app2"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type Router struct {
@@ -80,25 +81,22 @@ func rootMiddleware(next http.Handler) http.Handler {
 		// 	slog.String("http.req.remote_addr", r.RemoteAddr),
 		// )
 
-		app.TrackInfoEvent(ctx, "START HTTP Request",
-			"http.req.content-type", r.Header.Get("Content-Type"),
-			"http.req.proto", r.Proto,
-			"http.req.start", reqStart,
+		app2.RecordInfoEvent(ctx, "START HTTP Request",
+			attribute.String("http.req.content-type", r.Header.Get("Content-Type")),
+			attribute.String("http.req.proto", r.Proto),
+			attribute.String("http.req.start", reqStart.Format(time.RFC3339)),
 		)
 
 		writer := &respWriter{ResponseWriter: w}
 
-		processStart := time.Now()
 		next.ServeHTTP(writer, r)
-		processDuration := time.Since(processStart)
 
 		reqEnd := time.Now()
-		app.TrackInfoEvent(ctx, "END HTTP Request",
-			"http.resp.status", strconv.Itoa(writer.statusCode),
-			"http.resp.total-duration", fmt.Sprintf("%dms", time.Since(reqEnd).Milliseconds()),
-			"http.resp.processing-duration", fmt.Sprintf("%dms", processDuration.Milliseconds()),
-			"http.resp.content-length", writer.Header().Get("Content-Length"),
-			"http.resp.end", reqEnd,
+		app2.RecordInfoEvent(ctx, "END HTTP Request",
+			attribute.String("http.resp.status", strconv.Itoa(writer.statusCode)),
+			attribute.String("http.resp.total-duration", fmt.Sprintf("%dms", time.Since(reqEnd).Milliseconds())),
+			attribute.String("http.resp.content-length", writer.Header().Get("Content-Length")),
+			attribute.String("http.resp.end", reqEnd.Format(time.RFC3339)),
 		)
 	})
 }
@@ -110,7 +108,7 @@ func panicHandler(ctx context.Context) {
 	}
 
 	// TODO: Add additional log fields if necessary.
-	app.TrackErrorEvent(ctx, fmt.Errorf(
+	app2.RecordError(ctx, fmt.Errorf(
 		"httpserver:middleware:RootMiddleware: PANIC: [%+v]", rcv))
 }
 
