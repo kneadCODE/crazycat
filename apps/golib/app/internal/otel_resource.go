@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -43,23 +44,23 @@ func NewOTELResourceFromEnv(ctx context.Context) (*resource.Resource, error) {
 
 func loadServiceResourceFromEnv() ([]attribute.KeyValue, error) {
 	attrs := []attribute.KeyValue{
-		semconv.ServiceInstanceID(os.Getenv(string(semconv.ServiceInstanceIDKey))),
+		semconv.ServiceInstanceID(getOTELEnvVar(semconv.ServiceInstanceIDKey)),
 	}
 
-	if v := os.Getenv(string(semconv.ServiceNameKey)); v == "" {
+	if v := getOTELEnvVar(semconv.ServiceNameKey); v == "" {
 		return nil, errors.New("otel:svc name not provided")
 	} else {
 		attrs = append(attrs, semconv.ServiceName(v))
 	}
 
-	if v := os.Getenv(string(semconv.ServiceNamespaceKey)); v == "" {
+	if v := getOTELEnvVar(semconv.ServiceNamespaceKey); v == "" {
 		// OTEL considers this optional, but we will consider it mandatory to avoid mistakes
 		return nil, errors.New("otel:svc namespace not provided")
 	} else {
 		attrs = append(attrs, semconv.ServiceNamespace(v))
 	}
 
-	if v := os.Getenv(string(semconv.ServiceVersionKey)); v == "" {
+	if v := getOTELEnvVar(semconv.ServiceVersionKey); v == "" {
 		// OTEL considers this optional, but we will consider it mandatory to avoid mistakes
 		return nil, errors.New("otel:svc version not provided")
 	} else {
@@ -71,34 +72,34 @@ func loadServiceResourceFromEnv() ([]attribute.KeyValue, error) {
 
 func loadDeploymentResourceFromEnv() []attribute.KeyValue {
 	return []attribute.KeyValue{
-		semconv.DeploymentEnvironment(os.Getenv(string(semconv.DeploymentEnvironmentKey))),
+		semconv.DeploymentEnvironment(getOTELEnvVar(semconv.DeploymentEnvironmentKey)),
 	}
 }
 
 func loadContainerResourceFromEnv() []attribute.KeyValue {
 	return []attribute.KeyValue{
-		semconv.ContainerName(os.Getenv(string(semconv.ContainerNameKey))),
-		semconv.ContainerImageName(os.Getenv(string(semconv.ContainerImageNameKey))),
-		semconv.ContainerImageTag(os.Getenv(string(semconv.ContainerImageTagKey))),
-		semconv.ContainerRuntime(os.Getenv(string(semconv.ContainerRuntimeKey))),
+		semconv.ContainerName(getOTELEnvVar(semconv.ContainerNameKey)),
+		semconv.ContainerImageName(getOTELEnvVar(semconv.ContainerImageNameKey)),
+		semconv.ContainerImageTag(getOTELEnvVar(semconv.ContainerImageTagKey)),
+		semconv.ContainerRuntime(getOTELEnvVar(semconv.ContainerRuntimeKey)),
 	}
 }
 
 func loadK8sResourceFromEnv() []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
-		semconv.K8SClusterName(os.Getenv(string(semconv.K8SClusterNameKey))),
-		semconv.K8SNodeName(os.Getenv(string(semconv.K8SNodeNameKey))),
-		semconv.K8SNodeUID(os.Getenv(string(semconv.K8SNodeUIDKey))),
-		semconv.K8SNamespaceName(os.Getenv(string(semconv.K8SNamespaceNameKey))),
-		semconv.K8SPodName(os.Getenv(string(semconv.K8SPodNameKey))),
-		semconv.K8SPodUID(os.Getenv(string(semconv.K8SPodUIDKey))),
-		semconv.K8SContainerName(os.Getenv(string(semconv.K8SContainerNameKey))),
-		semconv.K8SDeploymentName(os.Getenv(string(semconv.K8SDeploymentNameKey))),
-		semconv.K8SJobName(os.Getenv(string(semconv.K8SJobNameKey))),
-		semconv.K8SCronJobName(os.Getenv(string(semconv.K8SCronJobNameKey))),
+		semconv.K8SClusterName(getOTELEnvVar(semconv.K8SClusterNameKey)),
+		semconv.K8SNodeName(getOTELEnvVar(semconv.K8SNodeNameKey)),
+		semconv.K8SNodeUID(getOTELEnvVar(semconv.K8SNodeUIDKey)),
+		semconv.K8SNamespaceName(getOTELEnvVar(semconv.K8SNamespaceNameKey)),
+		semconv.K8SPodName(getOTELEnvVar(semconv.K8SPodNameKey)),
+		semconv.K8SPodUID(getOTELEnvVar(semconv.K8SPodUIDKey)),
+		semconv.K8SContainerName(getOTELEnvVar(semconv.K8SContainerNameKey)),
+		semconv.K8SDeploymentName(getOTELEnvVar(semconv.K8SDeploymentNameKey)),
+		semconv.K8SJobName(getOTELEnvVar(semconv.K8SJobNameKey)),
+		semconv.K8SCronJobName(getOTELEnvVar(semconv.K8SCronJobNameKey)),
 	}
 
-	intV, _ := strconv.Atoi(os.Getenv(string(semconv.K8SContainerRestartCountKey))) // Intentionally suppressing the err since nothing to do
+	intV, _ := strconv.Atoi(getOTELEnvVar(semconv.K8SContainerRestartCountKey)) // Intentionally suppressing the err since nothing to do
 	attrs = append(attrs, semconv.K8SContainerRestartCount(intV))
 
 	return attrs
@@ -106,9 +107,20 @@ func loadK8sResourceFromEnv() []attribute.KeyValue {
 
 func loadCloudResourceFromEnv() []attribute.KeyValue {
 	return []attribute.KeyValue{
-		semconv.CloudProviderKey.String(os.Getenv(string(semconv.CloudProviderKey))),
-		semconv.CloudRegion(os.Getenv(string(semconv.CloudRegionKey))),
-		semconv.CloudAvailabilityZone(os.Getenv(string(semconv.CloudAvailabilityZoneKey))),
-		semconv.CloudPlatformKey.String(os.Getenv(string(semconv.CloudPlatformKey))),
+		semconv.CloudProviderKey.String(getOTELEnvVar(semconv.CloudProviderKey)),
+		semconv.CloudRegion(getOTELEnvVar(semconv.CloudRegionKey)),
+		semconv.CloudAvailabilityZone(getOTELEnvVar(semconv.CloudAvailabilityZoneKey)),
+		semconv.CloudPlatformKey.String(getOTELEnvVar(semconv.CloudPlatformKey)),
 	}
+}
+
+func getOTELEnvVar(key attribute.Key) string {
+	// Convert key into OTEL_<envvar> format and replace dots with underscore
+	return os.Getenv(
+		fmt.Sprintf("OTEL_%s",
+			strings.ToUpper(
+				strings.Replace(string(key), ".", "_", -1),
+			),
+		),
+	)
 }

@@ -11,7 +11,8 @@ services:
     volumes:
       - ../apps/golib:/src:cached
     working_dir: /src
+    env_file:
+      - ../apps/golib/.env
     environment:
-      CGO_ENABLED: 0
       GOARCH: amd64
       GOOS: linux
