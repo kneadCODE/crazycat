@@ -30,9 +30,10 @@ func main() {
 	f1(ctx)
 
 	ctx, cancel := context.WithCancel(ctx)
-	ctx, end := app2.StartSpan(ctx, "span1", false)
+	ctx, end := app2.StartSpan(ctx, "span1", false, attribute.String("sp1", "v1"))
 	app2.RecordInfoEvent(ctx, "Span1 info 1", attribute.String("sk1", "sv1"))
 	time.Sleep(time.Second)
+	ctx = app2.ContextWithAttributes(ctx, attribute.String("NEWK1", "NEWV1"), attribute.String("sk1", "overriden_sv1"))
 	app2.RecordInfoEvent(ctx, "Span1 info 2", attribute.String("sk2", "sv2"))
 	end(nil)
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -13,6 +14,16 @@ func ConfigFromContext(ctx context.Context) Config {
 		return v
 	}
 	return Config{}
+}
+
+// ContextWithAttributes adds the given attributes to the context and the span in the context (if any)
+func ContextWithAttributes(ctx context.Context, attrs ...attribute.KeyValue) context.Context {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attrs...)
+
+	ctx = setOTELAttrsInContext(ctx, append(otelAttrsFromContext(ctx), attrs...))
+
+	return ctx
 }
 
 // contextKey implementation is referenced from go stdlib:
