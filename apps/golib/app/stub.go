@@ -14,3 +14,4 @@ var newOTELMeterProviderStub = internal.NewOTELMeterProvider
 var setOTELTextMapPropagatorStub = otel.SetTextMapPropagator
 var setOTELTracerProviderStub = otel.SetTracerProvider
 var setOTELMeterProviderStub = otel.SetMeterProvider
+var exitSignalStub = exitSignal
