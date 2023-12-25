@@ -7,6 +7,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
@@ -68,5 +69,12 @@ func GetTracer() trace.Tracer {
 	return otel.GetTracerProvider().Tracer(
 		otelInstrumentationScope.Name,
 		trace.WithInstrumentationVersion(otelInstrumentationScope.Version),
+	) // TODO: Fill options
+}
+
+func GetMeter() metric.Meter {
+	return otel.GetMeterProvider().Meter(
+		otelInstrumentationScope.Name,
+		metric.WithInstrumentationVersion(otelInstrumentationScope.Version),
 	) // TODO: Fill options
 }

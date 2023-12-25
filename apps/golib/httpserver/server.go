@@ -8,21 +8,25 @@ import (
 	"time"
 
 	"github.com/kneadCODE/crazycat/apps/golib/app"
+	"github.com/kneadCODE/crazycat/apps/golib/httpserver/router"
 )
 
 // New returns a new instance of Server.
-func New(ctx context.Context, router Router, options ...ServerOption) (*Server, error) {
+func New(ctx context.Context, rtr router.Router, options ...ServerOption) (*Server, error) {
+	handler, err := rtr.Handler()
+	if err != nil {
+		return nil, err
+	}
+
 	s := &Server{
 		srv: &http.Server{
 			Addr:         ":9000",
-			Handler:      router.Handler(),
+			Handler:      handler,
 			ReadTimeout:  5 * time.Second,
 			WriteTimeout: 10 * time.Second,
 			IdleTimeout:  120 * time.Second,
 			BaseContext: func(net.Listener) context.Context {
-				// TODO: Figure out why app pkg does not have a way to create a new instance
-				// return app.NewContext(context.Background(), app.FromContext(ctx))
-				return context.Background()
+				return app.CloneNewContext(ctx)
 			},
 		},
 		gracefulShutdownTimeout: 10 * time.Second,
@@ -66,11 +70,11 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) stop(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(context.Background(), s.gracefulShutdownTimeout) // Cannot rely on root context as that might have been cancelled.
+	cancelCtx, cancel := context.WithTimeout(context.Background(), s.gracefulShutdownTimeout) // Cannot rely on root context as that might have been cancelled.
 	defer cancel()
 
 	app.RecordInfoEvent(ctx, "Attempting HTTP server graceful shutdown")
-	if err := s.srv.Shutdown(ctx); err != nil {
+	if err := s.srv.Shutdown(cancelCtx); err != nil {
 		app.RecordError(ctx, fmt.Errorf("httpserver:Server: graceful shutdown failed: %w", err))
 
 		app.RecordInfoEvent(ctx, "Attempting HTTP server force shutdown")

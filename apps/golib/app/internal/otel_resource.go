@@ -48,7 +48,7 @@ func loadServiceResourceFromEnv() ([]attribute.KeyValue, error) {
 	}
 
 	if v := getOTELEnvVar(semconv.ServiceNameKey); v == "" {
-		return nil, errors.New("otel:svc name not provided")
+		return nil, errors.New("otel:svc Name not provided")
 	} else {
 		attrs = append(attrs, semconv.ServiceName(v))
 	}

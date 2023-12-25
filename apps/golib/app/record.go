@@ -31,12 +31,12 @@ func RecordError(ctx context.Context, err error, attrs ...attribute.KeyValue) {
 	span := trace.SpanFromContext(ctx)
 	span.RecordError(err, trace.WithAttributes(attrs...))
 
-	zapL := zapFromContext(ctx)
+	zapL := internal.ZapFromContext(ctx)
 	if zapL == nil {
 		return
 	}
 
-	internal.ZapLogEnriched(zapL, zapcore.ErrorLevel, err.Error(), span, append(attrs, otelAttrsFromContext(ctx)...))
+	internal.ZapLogEnriched(zapL, zapcore.ErrorLevel, err.Error(), span, append(attrs, internal.OTELAttrsFromContext(ctx)...))
 }
 
 func recordCommon(ctx context.Context, level zapcore.Level, msg string, attrs []attribute.KeyValue) {
@@ -45,10 +45,10 @@ func recordCommon(ctx context.Context, level zapcore.Level, msg string, attrs []
 		span.AddEvent(msg, trace.WithAttributes(attrs...))
 	}
 
-	zapL := zapFromContext(ctx)
+	zapL := internal.ZapFromContext(ctx)
 	if zapL == nil {
 		return
 	}
 
-	internal.ZapLogEnriched(zapL, level, msg, span, append(attrs, otelAttrsFromContext(ctx)...))
+	internal.ZapLogEnriched(zapL, level, msg, span, append(attrs, internal.OTELAttrsFromContext(ctx)...))
 }

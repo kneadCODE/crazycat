@@ -26,7 +26,7 @@ func TestRecordDebugEvent(t *testing.T) {
 	// Given:
 	l, err := internal.NewZap(false, &resource.Resource{})
 	require.NoError(t, err)
-	ctx = setZapInContext(ctx, l)
+	ctx = internal.SetZapInContext(ctx, l)
 	// When && Then:
 	RecordDebugEvent(ctx, "message")
 	RecordDebugEvent(ctx, "message",
@@ -63,7 +63,7 @@ func TestTrackInfoEvent(t *testing.T) {
 	// Given:
 	l, err := internal.NewZap(false, &resource.Resource{})
 	require.NoError(t, err)
-	ctx = setZapInContext(ctx, l)
+	ctx = internal.SetZapInContext(ctx, l)
 	// When && Then:
 	RecordInfoEvent(ctx, "message")
 	RecordInfoEvent(ctx, "message",
@@ -100,7 +100,7 @@ func TestTrackWarnEvent(t *testing.T) {
 	// Given:
 	l, err := internal.NewZap(false, &resource.Resource{})
 	require.NoError(t, err)
-	ctx = setZapInContext(ctx, l)
+	ctx = internal.SetZapInContext(ctx, l)
 	// When && Then:
 	RecordWarnEvent(ctx, "message")
 	RecordWarnEvent(ctx, "message",
@@ -137,7 +137,7 @@ func TestTrackErrorEvent(t *testing.T) {
 	// Given:
 	l, err := internal.NewZap(false, &resource.Resource{})
 	require.NoError(t, err)
-	ctx = setZapInContext(ctx, l)
+	ctx = internal.SetZapInContext(ctx, l)
 	// When && Then:
 	RecordError(ctx, errors.New("some err"))
 	RecordError(ctx, errors.New("some err"),

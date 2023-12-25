@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kneadCODE/crazycat/apps/golib/app/internal"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
@@ -185,7 +186,7 @@ func TestInit(t *testing.T) {
 
 				cfg := ConfigFromContext(ctx)
 				require.EqualValues(t, tc.expCfg, cfg)
-				require.Equal(t, tc.mockZap, zapFromContext(ctx))
+				require.Equal(t, tc.mockZap, internal.ZapFromContext(ctx))
 
 				finish()
 			}
