@@ -13,25 +13,27 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type OTELRequestBodyWrapper struct {
+type RequestBodyWrapper struct {
 	io.ReadCloser
 
 	Ctx context.Context
 
-	BodySize int64
-	ReadErr  error
+	bodySize int64
+	readErr  error
 }
 
-func (w *OTELRequestBodyWrapper) Read(b []byte) (int, error) {
+func (w *RequestBodyWrapper) Read(b []byte) (int, error) {
 	n, err := w.ReadCloser.Read(b)
 	n1 := int64(n)
-	w.BodySize += n1
-	w.ReadErr = err
-	trace.SpanFromContext(w.Ctx).AddEvent("http.request.read", trace.WithAttributes(readBytesKey.Int64(n1)))
+	w.bodySize += n1
+	w.readErr = err
+	trace.SpanFromContext(w.Ctx).AddEvent("http.request.read", trace.WithAttributes(
+		attribute.Int64("http.request.read_bytes", n1),
+	))
 	return n, err
 }
 
-func extractOTELAttrsFromReq(r *http.Request) []attribute.KeyValue {
+func ExtractOTELAttrsFromReq(r *http.Request) []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
 		semconv.HTTPRequestMethodKey.String(r.Method),
 		semconv.HTTPRoute(chi.RouteContext(r.Context()).RoutePattern()),

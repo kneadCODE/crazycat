@@ -45,7 +45,7 @@ func Run(ctx context.Context, services ...service) {
 
 	wg.Wait()
 
-	RecordInfoEvent(ctx, "All services shut down. Exiting app.")
+	RecordInfoEvent(ctx, "All services shut down")
 }
 
 // service represents an executable that is context aware and will return an error if encountered.

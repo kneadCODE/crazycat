@@ -6,47 +6,48 @@ import (
 	"strconv"
 
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
-type OTELResponseWrapper struct {
+// ResponseWriterWrapper is a wrapper around http.ResponseWriter to help with OTEL instrumentation
+type ResponseWriterWrapper struct {
 	http.ResponseWriter
 
 	Ctx context.Context
 
-	BodySize   int64
-	StatusCode int
-	WriteErr   error
+	bodySize   int64
+	statusCode int
+	writeErr   error
 
 	wroteHeader bool
 }
 
-func (w *OTELResponseWrapper) WriteHeader(statusCode int) {
+// WriteHeader satisfies the interface and records the status code
+func (w *ResponseWriterWrapper) WriteHeader(statusCode int) {
 	if !w.wroteHeader {
 		w.wroteHeader = true
-		w.StatusCode = statusCode
+		w.statusCode = statusCode
 	}
 	w.ResponseWriter.WriteHeader(statusCode)
 }
 
-func (w *OTELResponseWrapper) Write(p []byte) (int, error) {
+// Write satisfies the interface and records the status code
+func (w *ResponseWriterWrapper) Write(p []byte) (int, error) {
 	if !w.wroteHeader {
 		w.WriteHeader(http.StatusOK)
 	}
 	n, err := w.ResponseWriter.Write(p)
 	n1 := int64(n)
-	w.BodySize += n1
-	w.WriteErr = err
-	trace.SpanFromContext(w.Ctx).AddEvent("http.response.write", trace.WithAttributes(wroteBytesKey.Int64(n1)))
+	w.bodySize += n1
+	w.writeErr = err
+	trace.SpanFromContext(w.Ctx).AddEvent("http.response.write", trace.WithAttributes(
+		attribute.Int64("http.response.wrote_bytes", n1),
+	))
 	return n, err
 }
 
-func (w OTELResponseWrapper) GetSpanAttrs() []attribute.KeyValue {
-	attrs := []attribute.KeyValue{
-		semconv.HTTPResponseBodySize(int(w.BodySize)),
-		semconv.HTTPResponseStatusCode(w.StatusCode),
-	}
+func (w *ResponseWriterWrapper) getHeaderAttrs() []attribute.KeyValue {
+	var attrs []attribute.KeyValue
 
 	if v := w.Header().Get("Content-Type"); v != "" {
 		attrs = append(attrs, attribute.String("http.response.header.content-type", v))
@@ -54,6 +55,8 @@ func (w OTELResponseWrapper) GetSpanAttrs() []attribute.KeyValue {
 	if v, err := strconv.ParseInt(w.Header().Get("Content-Length"), 10, 64); err != nil {
 		attrs = append(attrs, attribute.Int64("http.response.header.content-length", v))
 	}
+
+	// TODO: Check if any other header needs to be added
 
 	return attrs
 }

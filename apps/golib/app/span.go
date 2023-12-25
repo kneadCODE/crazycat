@@ -21,8 +21,10 @@ func StartSpan(
 ) (newCtx context.Context, end func(error)) {
 
 	if async {
-		newCtx = internal.SetZapInContext(context.Background(), internal.ZapFromContext(ctx).With())
+		newCtx = context.Background()
+		newCtx = setConfigInContext(newCtx, ConfigFromContext(ctx))
 		newCtx = trace.ContextWithSpan(newCtx, trace.SpanFromContext(ctx))
+		newCtx = internal.SetZapInContext(newCtx, internal.ZapFromContext(ctx))
 	} else {
 		newCtx = ctx
 	}

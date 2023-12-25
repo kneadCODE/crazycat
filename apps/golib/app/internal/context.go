@@ -4,19 +4,8 @@ import (
 	"context"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
-
-// ContextWithAttributes adds the given attributes to the context and the span in the context (if any)
-func ContextWithAttributes(ctx context.Context, attrs ...attribute.KeyValue) context.Context {
-	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(attrs...)
-
-	ctx = SetOTELAttrsInContext(ctx, append(OTELAttrsFromContext(ctx), attrs...))
-
-	return ctx
-}
 
 func SetOTELAttrsInContext(ctx context.Context, attrs []attribute.KeyValue) context.Context {
 	return context.WithValue(ctx, otelAttrsCtxKey, attrs)
