@@ -16,7 +16,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// StartSpan starts the span. If span is available
+// StartSpan starts the http server request processing span.
+// NOTE: For simplicity, we are assuming that the request will always be used with go-chi.
 func StartSpan(r *http.Request, attrs []attribute.KeyValue) (ctx context.Context, end func(error)) {
 	ctx = r.Context()
 
@@ -56,6 +57,7 @@ func StartSpan(r *http.Request, attrs []attribute.KeyValue) (ctx context.Context
 // SpanPostProcessing adds post-processing attributes to the span
 func SpanPostProcessing(ctx context.Context, rww *ResponseWriterWrapper, rbw *RequestBodyWrapper) {
 	span := trace.SpanFromContext(ctx)
+
 	span.SetAttributes(
 		semconv.HTTPRequestBodySize(int(rbw.bodySize)),
 		semconv.HTTPResponseBodySize(int(rww.bodySize)),

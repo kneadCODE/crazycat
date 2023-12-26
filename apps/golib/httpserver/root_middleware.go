@@ -1,4 +1,4 @@
-package router
+package httpserver
 
 import (
 	"context"
@@ -20,9 +20,9 @@ func (m *rootMiddleware) serveHTTP(w http.ResponseWriter, r *http.Request, next 
 	reqStart := time.Now()
 	ctx := r.Context() // Extracting span to pass in to panicHandler
 
-	defer panicHandler(ctx)
+	defer panicHandler(ctx, w)
 
-	attrs := otelhttpserver.ExtractOTELAttrsFromReq(r) // extract attrs from request
+	attrs := otelhttpserver.ExtractAttrsFromReq(r) // extract attrs from request
 
 	m.measure.MeasurePreProcessing(ctx, attrs) // OTEL pre-process measuring
 
@@ -50,11 +50,29 @@ func (m *rootMiddleware) serveHTTP(w http.ResponseWriter, r *http.Request, next 
 	m.measure.MeasurePostProcessing(ctx, rw, bw, elapsedTime, attrs) // OTEL post-process measuring
 }
 
-func panicHandler(ctx context.Context) {
+func panicHandler(ctx context.Context, w http.ResponseWriter) {
 	rcv := recover()
 	if rcv == nil {
 		return
 	}
 
 	app.RecordError(ctx, fmt.Errorf("httpserver:middleware:RootMiddleware: PANIC: [%+v]", rcv))
+	WriteJSON(ctx, w, ErrInternalServer, nil)
+}
+
+func newRootMiddleware() (func(next http.Handler) http.Handler, error) {
+	measure, err := otelhttpserver.NewMeasure()
+	if err != nil {
+		return nil, err
+	}
+
+	m := rootMiddleware{
+		measure: measure,
+	}
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			m.serveHTTP(w, r, next)
+		})
+	}, nil
 }

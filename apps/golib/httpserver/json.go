@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -54,7 +55,7 @@ func WriteJSON(ctx context.Context, w http.ResponseWriter, v interface{}, header
 		`, vBytes, w.Header()),
 	)
 
-	if _, err = w.Write(vBytes); err != nil {
+	if _, err = w.Write(vBytes); err != nil && err != io.EOF {
 		app.RecordError(ctx, fmt.Errorf("httpserver:WriteJSON: %w", err)) // TODO: Add any additional fields if needed.
 	}
 }
