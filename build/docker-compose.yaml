@@ -5,7 +5,7 @@ networks:
 services:
   golib-go:
     container_name: crazycat-golib-go
-    image: golang:1.20
+    image: golang:1.21
     networks:
       - base
     volumes:
