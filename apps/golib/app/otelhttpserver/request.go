@@ -33,7 +33,9 @@ func (w *RequestBodyWrapper) Read(b []byte) (int, error) {
 	return n, err
 }
 
-func ExtractOTELAttrsFromReq(r *http.Request) []attribute.KeyValue {
+// ExtractAttrsFromReq extracts OTEL attributes from the request.
+// NOTE: In order to simplify the impl, we are assuming that the request is non-nil and always used with go-chi.
+func ExtractAttrsFromReq(r *http.Request) []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
 		semconv.HTTPRequestMethodKey.String(r.Method),
 		semconv.HTTPRoute(chi.RouteContext(r.Context()).RoutePattern()),
@@ -50,13 +52,13 @@ func ExtractOTELAttrsFromReq(r *http.Request) []attribute.KeyValue {
 
 		semconv.UserAgentOriginal(r.UserAgent()),
 
-		semconv.ServerAddress(r.URL.Host),
+		semconv.ServerAddress(r.URL.Hostname()),
 		// Server port filled in later
 
 		semconv.ClientAddress(r.Header.Get("X-Forwarded-For")),
 	}
 
-	if v, err := strconv.Atoi(r.URL.Port()); err != nil {
+	if v, err := strconv.Atoi(r.URL.Port()); err == nil {
 		attrs = append(attrs, semconv.ServerPort(v))
 	}
 
@@ -66,11 +68,11 @@ func ExtractOTELAttrsFromReq(r *http.Request) []attribute.KeyValue {
 	if v := r.Header.Get("Content-Type"); v != "" {
 		attrs = append(attrs, attribute.String("http.request.header.content-type", v))
 	}
-	if v, err := strconv.ParseInt(r.Header.Get("Content-Length"), 10, 64); err != nil {
+	if v, err := strconv.ParseInt(r.Header.Get("Content-Length"), 10, 64); err == nil {
 		attrs = append(attrs, attribute.Int64("http.request.header.content-length", v))
 	}
-	if v := r.Header.Values("X-Forwarded-For"); len(v) != 0 {
-		attrs = append(attrs, attribute.StringSlice("http.request.header.x-forwarded-for", v))
+	if v := r.Header.Get("X-Forwarded-For"); len(v) != 0 {
+		attrs = append(attrs, attribute.String("http.request.header.x-forwarded-for", v))
 	}
 
 	return attrs

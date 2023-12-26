@@ -22,7 +22,7 @@ func (m *rootMiddleware) serveHTTP(w http.ResponseWriter, r *http.Request, next 
 
 	defer panicHandler(ctx)
 
-	attrs := otelhttpserver.ExtractOTELAttrsFromReq(r) // extract attrs from request
+	attrs := otelhttpserver.ExtractAttrsFromReq(r) // extract attrs from request
 
 	m.measure.MeasurePreProcessing(ctx, attrs) // OTEL pre-process measuring
 
