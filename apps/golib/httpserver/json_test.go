@@ -102,8 +102,8 @@ func TestWriteJSON(t *testing.T) {
 	v, err = io.ReadAll(w.Result().Body)
 	require.NoError(t, err)
 	require.Equal(t, "application/json", w.Header().Get("Content-Type"))
-	require.Equal(t, strconv.Itoa(len(`{"code":"internal_server_error","description":"Internal Server Error"}`)), w.Header().Get("Content-Length"))
-	require.Equal(t, `{"code":"internal_server_error","description":"Internal Server Error"}`, string(v))
+	require.Equal(t, strconv.Itoa(len(`{"code":"INTERNAL_SERVER_ERROR","description":"Internal Server Error"}`)), w.Header().Get("Content-Length"))
+	require.Equal(t, `{"code":"INTERNAL_SERVER_ERROR","description":"Internal Server Error"}`, string(v))
 
 	// Given: write err
 	w = httptest.NewRecorder()
