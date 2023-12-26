@@ -23,6 +23,6 @@ func (e Error) Error() string {
 // ErrInternalServer is the default err for server side failures
 var ErrInternalServer = &Error{
 	Status: http.StatusInternalServerError,
-	Code:   "internal_server_error",
+	Code:   "INTERNAL_SERVER_ERROR",
 	Desc:   "Internal Server Error",
 }
