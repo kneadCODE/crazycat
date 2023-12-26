@@ -1,4 +1,4 @@
-package router
+package httpserver
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"net/http/pprof"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kneadCODE/crazycat/apps/golib/app/otelhttpserver"
 )
 
 type Router struct {
@@ -25,16 +24,15 @@ func (rtr Router) Handler() (chi.Router, error) {
 		_, _ = fmt.Fprintln(w, "ok") // Intentionally ignoring the error as nothing to do once caught.
 	})
 
-	// TODO: Deal with this
-	// if rt.ReadinessHandlerFunc != nil {
-	// 	rtr.Get("/_/ready", rt.ReadinessHandlerFunc)
-	// }
+	if rtr.ReadinessHandlerFunc != nil {
+		r.Get("/_/ready", rtr.ReadinessHandlerFunc)
+	}
 
 	if rtr.ProfilingEnabled {
 		profileRoutes(r)
 	}
 
-	rootM, err := newRootMiddleware()
+	rootM, err := newRootMiddlewareStub()
 	if err != nil {
 		return nil, err
 	}
@@ -67,21 +65,4 @@ func profileRoutes(r chi.Router) {
 	r.Handle("/_/profile/heap", pprof.Handler("heap"))
 	r.Handle("/_/profile/block", pprof.Handler("block"))
 	r.Handle("/_/profile/allocs", pprof.Handler("allocs"))
-}
-
-func newRootMiddleware() (func(next http.Handler) http.Handler, error) {
-	measure, err := otelhttpserver.NewMeasure()
-	if err != nil {
-		return nil, err
-	}
-
-	m := rootMiddleware{
-		measure: measure,
-	}
-
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			m.serveHTTP(w, r, next)
-		})
-	}, nil
 }

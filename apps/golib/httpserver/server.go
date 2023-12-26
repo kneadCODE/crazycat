@@ -8,11 +8,10 @@ import (
 	"time"
 
 	"github.com/kneadCODE/crazycat/apps/golib/app"
-	"github.com/kneadCODE/crazycat/apps/golib/httpserver/router"
 )
 
 // New returns a new instance of Server.
-func New(ctx context.Context, rtr router.Router, options ...ServerOption) (*Server, error) {
+func New(ctx context.Context, rtr Router, options ...ServerOption) (*Server, error) {
 	handler, err := rtr.Handler()
 	if err != nil {
 		return nil, err

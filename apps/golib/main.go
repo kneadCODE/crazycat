@@ -8,7 +8,6 @@ import (
 
 	"github.com/kneadCODE/crazycat/apps/golib/app"
 	"github.com/kneadCODE/crazycat/apps/golib/httpserver"
-	"github.com/kneadCODE/crazycat/apps/golib/httpserver/router"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -52,7 +51,7 @@ func main() {
 	// fmt.Println(ctx.Err())
 	// fmt.Println(newCtx.Err())
 
-	rtr := router.Router{
+	rtr := httpserver.Router{
 		ProfilingEnabled:     true,
 		ReadinessHandlerFunc: nil,
 		RESTRoutes:           nil,
